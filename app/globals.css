@@ -1,0 +1,314 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   homegds グローバルスタイル
+   新パレット：コーラルピンク × ラベンダー × スカイブルー
+   Apple純正風ニュートラル背景 + ダークモード対応
+   ============================================================ */
+
+:root {
+  --sat: env(safe-area-inset-top);
+  --sab: env(safe-area-inset-bottom);
+
+  /* ── ライトモード CSS変数 ── */
+  --bg:           #f5f5f7;
+  --surface:      #ffffff;
+  --surface-alt:  #f5f5f7;
+  --border:       #e8e8ed;
+  --border-soft:  #f0f0f5;
+  --text-primary: #1c1c1e;
+  --text-secondary: #636366;
+  --text-muted:   #8e8e93;
+  --text-placeholder: #aeaeb2;
+
+  /* アクセント */
+  --accent:       #f2524a;   /* coral-500 */
+  --accent-soft:  #fff5f4;   /* coral-50  */
+  --accent-hover: #de3b33;   /* coral-600 */
+
+  /* ── Glass（半透明×ぼかし）── ヘッダー/タブバー/モーダル専用 ── */
+  --glass-bg:       rgba(255,255,255,0.72);
+  --glass-border:   rgba(60,60,67,0.10);
+  --glass-shadow:   0 1px 24px rgba(0,0,0,0.06);
+  --glass-overlay:  rgba(0,0,0,0.28);   /* モーダル背後の暗幕 */
+}
+
+.dark {
+  /* ── ダークモード CSS変数 ── */
+  --bg:           #000000;
+  --surface:      #1c1c1e;
+  --surface-alt:  #2c2c2e;
+  --border:       #38383a;
+  --border-soft:  #2c2c2e;
+  --text-primary: #f5f5f7;
+  --text-secondary: #ebebf5cc;
+  --text-muted:   #ebebf599;
+  --text-placeholder: #ebebf54d;
+
+  /* アクセント（ダークでも同色） */
+  --accent:       #f2524a;
+  --accent-soft:  rgba(242,82,74,0.15);
+  --accent-hover: #de3b33;
+
+  /* ── Glass（ダーク） ── */
+  --glass-bg:       rgba(28,28,30,0.66);
+  --glass-border:   rgba(255,255,255,0.08);
+  --glass-shadow:   0 1px 24px rgba(0,0,0,0.4);
+  --glass-overlay:  rgba(0,0,0,0.5);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans",
+    "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+  background-color: var(--bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.2s, color 0.2s;
+  /* iPhone Safariのスクロール慣性 */
+  -webkit-overflow-scrolling: touch;
+  /* テキスト選択を通常操作で抑制（スワイプ誤選択防止） */
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── iOS風コンポーネント ── */
+@layer components {
+  /* リスト本体：上下ボーダーのみ（カードなし） */
+  .list-group {
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    background-color: var(--surface);
+  }
+
+  /* リスト行 */
+  .list-row {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    gap: 12px;
+    border-bottom: 1px solid var(--border-soft);
+    background-color: var(--surface);
+    transition: background-color 0.1s;
+  }
+  .list-row:last-child { border-bottom: none; }
+  .list-row:active { background-color: var(--surface-alt); }
+
+  /* セクションラベル */
+  .section-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 20px 16px 4px;
+  }
+
+  /* アクセントボタン */
+  .btn-accent {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background-color: var(--accent);
+    color: #fff;
+    font-weight: 600;
+    border: none;
+    border-radius: 20px;
+    padding: 7px 16px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background-color 0.15s, opacity 0.15s;
+  }
+  .btn-accent:active { background-color: var(--accent-hover); }
+  .btn-accent:disabled { opacity: 0.4; cursor: default; }
+
+  /* アウトラインボタン */
+  .btn-outline {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background-color: transparent;
+    color: var(--accent);
+    font-weight: 600;
+    border: 1.5px solid var(--accent);
+    border-radius: 20px;
+    padding: 7px 16px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background-color 0.15s, opacity 0.15s;
+  }
+  .btn-outline:active { background-color: var(--accent-soft); }
+
+  /* フォームインプット */
+  .form-input {
+    width: 100%;
+    padding: 11px 14px;
+    border-radius: 12px;
+    font-size: 15px;
+    background-color: var(--surface);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .form-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  .form-input.error {
+    border-color: #f87168;
+    box-shadow: 0 0 0 3px rgba(248,113,104,0.15);
+  }
+
+  /* ヘッダー：Glass（半透明＋ぼかし＋極薄境界線） */
+  .app-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background-color: var(--glass-bg);
+    backdrop-filter: blur(20px) saturate(1.8);
+    -webkit-backdrop-filter: blur(20px) saturate(1.8);
+    border-bottom: 0.5px solid var(--glass-border);
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+  }
+
+  /* タブバー：Glass（半透明＋ぼかし＋極薄境界線） */
+  .tab-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    background-color: var(--glass-bg);
+    backdrop-filter: blur(20px) saturate(1.8);
+    -webkit-backdrop-filter: blur(20px) saturate(1.8);
+    border-top: 0.5px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    display: flex;
+  }
+
+  /* ダークモードトグル */
+  .toggle-track {
+    position: relative;
+    width: 51px;
+    height: 31px;
+    border-radius: 16px;
+    transition: background-color 0.25s;
+    flex-shrink: 0;
+    cursor: pointer;
+    border: none;
+    outline: none;
+  }
+  .toggle-thumb {
+    position: absolute;
+    top: 2px;
+    width: 27px;
+    height: 27px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+    transition: left 0.25s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  /* ── モーダル背後の暗幕（半透明・ぼかしなし） ── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    background-color: var(--glass-overlay);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+  }
+
+  /* ── モーダル/ダイアログ本体：Glass ── */
+  .modal-sheet {
+    background-color: var(--glass-bg);
+    backdrop-filter: blur(24px) saturate(1.8);
+    -webkit-backdrop-filter: blur(24px) saturate(1.8);
+    border: 0.5px solid var(--glass-border);
+    box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+    border-radius: 20px;
+    overflow: hidden;
+  }
+
+  /* モーダル内の区切り線（Glass上で馴染む薄さ） */
+  .modal-divider {
+    border-color: var(--glass-border);
+  }
+}
+
+@layer utilities {
+  .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+  .text-primary   { color: var(--text-primary);   }
+  .text-secondary { color: var(--text-secondary); }
+  .text-muted     { color: var(--text-muted);     }
+  .bg-surface     { background-color: var(--surface);     }
+  .bg-surface-alt { background-color: var(--surface-alt); }
+  .bg-app         { background-color: var(--bg); }
+  .border-app     { border-color: var(--border);      }
+  .border-soft    { border-color: var(--border-soft); }
+}
+
+/* OSの「視差効果を減らす」設定を尊重し、ページ遷移アニメーションを無効化 */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* ============================================================
+   アクセントグラデーション
+   コーラルピンク → ラベンダー → スカイブルー
+   操作できるUI要素（ボタン・アクティブタブ・スイッチON・★）のみに使用
+   ============================================================ */
+
+:root {
+  --grad: linear-gradient(135deg, #f2524a 0%, #b8a9e8 55%, #89c4e1 100%);
+  --grad-text: linear-gradient(135deg, #e8413a 0%, #9b87e0 55%, #5baed4 100%);
+  --grad-soft: linear-gradient(135deg,
+    rgba(242,82,74,0.12) 0%,
+    rgba(184,169,232,0.12) 55%,
+    rgba(137,196,225,0.12) 100%
+  );
+}
+
+/* グラデーション背景ユーティリティ */
+.bg-grad         { background: var(--grad); }
+.bg-grad-soft    { background: var(--grad-soft); }
+
+/* グラデーションテキスト */
+.text-grad {
+  background: var(--grad-text);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* グラデーションボーダー（フォーカスリング） */
+.ring-grad {
+  box-shadow: 0 0 0 3px rgba(184,169,232,0.35), 0 0 0 1.5px rgba(242,82,74,0.25);
+}
+
+/* アクティブタブドット */
+.tab-active-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--grad);
+  margin-top: 2px;
+}

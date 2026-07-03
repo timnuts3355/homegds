@@ -1,0 +1,127 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { ChevronLeft, ChevronDown } from "lucide-react";
+import { getDb } from "@/db";
+import { addHistory } from "@/lib/history";
+import { productSchema, type ProductFormValues } from "@/lib/validations";
+import { CATEGORIES, UNITS } from "@/lib/constants";
+
+export default function AddProductForm() {
+  const router = useRouter();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<ProductFormValues>({
+    resolver: zodResolver(productSchema),
+    defaultValues: {
+      name: "", category: "food", quantity: 0,
+      unit: "個", minStock: 1, isFavorite: false,
+    },
+  });
+
+  const onSubmit = async (values: ProductFormValues) => {
+    const now = new Date();
+    const id = await getDb().products.add({ ...values, createdAt: now, updatedAt: now });
+    await addHistory({
+      productId: id as number, productName: values.name, action: "add",
+      quantityBefore: null, quantityAfter: values.quantity, unit: values.unit,
+    });
+    router.push("/");
+  };
+
+  return (
+    <div className="min-h-screen" style={{ backgroundColor: "var(--bg)" }}>
+      {/* ヘッダー：Glass */}
+      <header className="app-header">
+        <div className="flex items-center justify-between w-full max-w-2xl mx-auto">
+          <button type="button" onClick={() => router.back()}
+            className="flex items-center gap-1 text-sm font-medium -ml-1 py-1 px-1"
+            style={{ color: "var(--accent)" }} aria-label="戻る">
+            <ChevronLeft size={20} strokeWidth={2} />戻る
+          </button>
+          <h1 className="text-[15px] font-semibold" style={{ color: "var(--text-primary)" }}>商品を追加</h1>
+          <div className="w-12" />
+        </div>
+      </header>
+
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        <div className="max-w-2xl mx-auto px-4 pt-6 pb-32 space-y-6">
+
+          <FormSection label="商品名" required error={errors.name?.message}>
+            <input {...register("name")} type="text" placeholder="例：醤油、ティッシュ" autoFocus
+              className="form-input" />
+          </FormSection>
+
+          <FormSection label="カテゴリ" required error={errors.category?.message}>
+            <div className="relative">
+              <select {...register("category")} className="form-input appearance-none pr-8 cursor-pointer">
+                {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+              </select>
+              <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                style={{ color: "var(--text-muted)" }} />
+            </div>
+          </FormSection>
+
+          <div className="grid grid-cols-2 gap-3">
+            <FormSection label="現在の在庫" required error={errors.quantity?.message}>
+              <input {...register("quantity")} type="number" inputMode="numeric" min={0} placeholder="0"
+                className="form-input" />
+            </FormSection>
+            <FormSection label="単位" required error={errors.unit?.message}>
+              <div className="relative">
+                <select {...register("unit")} className="form-input appearance-none pr-8 cursor-pointer">
+                  {UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
+                </select>
+                <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                  style={{ color: "var(--text-muted)" }} />
+              </div>
+            </FormSection>
+          </div>
+
+          <FormSection label="最低在庫" required error={errors.minStock?.message}
+            hint="この数を下回ると補充が必要と表示されます">
+            <input {...register("minStock")} type="number" inputMode="numeric" min={0} placeholder="1"
+              className="form-input" />
+          </FormSection>
+
+        </div>
+
+        {/* 固定フッター：Glass + グラデーションボタン */}
+        <div className="fixed bottom-0 left-0 right-0 z-50 px-4 py-3 pb-safe"
+          style={{
+            backgroundColor: "var(--glass-bg)",
+            backdropFilter: "blur(20px) saturate(1.8)",
+            WebkitBackdropFilter: "blur(20px) saturate(1.8)",
+            borderTop: "0.5px solid var(--glass-border)",
+          }}>
+          <div className="max-w-2xl mx-auto">
+            <button type="submit" disabled={isSubmitting}
+              className="w-full bg-grad disabled:opacity-40 text-white font-semibold text-base py-3.5 rounded-ios-lg transition-opacity active:opacity-80">
+              {isSubmitting ? "保存中…" : "保存する"}
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function FormSection({ label, required, error, hint, children }: {
+  label: string; required?: boolean; error?: string; hint?: string; children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <label className="block text-sm font-medium" style={{ color: "var(--text-secondary)" }}>
+        {label}{required && <span style={{ color: "#f2524a" }} className="ml-0.5">*</span>}
+      </label>
+      {children}
+      {hint && !error && <p className="text-xs" style={{ color: "var(--text-muted)" }}>{hint}</p>}
+      {error         && <p className="text-xs" style={{ color: "#f2524a" }}>{error}</p>}
+    </div>
+  );
+}
