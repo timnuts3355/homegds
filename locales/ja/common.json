@@ -1,0 +1,21 @@
+{
+  "app": {
+    "name": "homegds",
+    "tagline": "家庭用在庫管理"
+  },
+  "nav": {
+    "home":      "ホーム",
+    "inventory": "在庫",
+    "history":   "履歴",
+    "settings":  "設定"
+  },
+  "settings": {
+    "title":        "設定",
+    "language":     "言語",
+    "languageJa":   "日本語",
+    "languageZhTW": "繁體中文",
+    "darkMode":     "ダークモード",
+    "darkModeNote": "（次回実装予定）",
+    "sectionApp":   "アプリ設定"
+  }
+}
