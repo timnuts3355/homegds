@@ -53,19 +53,17 @@ export default function TabBar() {
               style={{ color: isActive ? "transparent" : "var(--text-muted)" }}
               aria-current={isActive ? "page" : undefined}
             >
-              {/* アクティブ時：アイコンにグラデーション適用 */}
+              {/* アクティブ時：グラデーション色をcolorで渡す（型安全） */}
               {isActive ? (
                 <span className="relative flex items-center justify-center">
                   <Icon
                     size={24}
                     strokeWidth={2.2}
-                    style={{
-                      stroke: "url(#tabGrad)",
-                    }}
+                    color="#b8a9e8"
                   />
                 </span>
               ) : (
-                <Icon size={24} strokeWidth={1.6} />
+                <Icon size={24} strokeWidth={1.6} color="var(--text-muted)" />
               )}
               <span
                 className={`text-[10px] leading-none ${isActive ? "font-semibold text-grad" : "font-medium"}`}
@@ -80,16 +78,6 @@ export default function TabBar() {
         })}
       </div>
 
-      {/* SVG グラデーション定義（アイコン stroke 用） */}
-      <svg width="0" height="0" style={{ position: "absolute" }}>
-        <defs>
-          <linearGradient id="tabGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%"   stopColor="#f2524a" />
-            <stop offset="55%"  stopColor="#b8a9e8" />
-            <stop offset="100%" stopColor="#89c4e1" />
-          </linearGradient>
-        </defs>
-      </svg>
     </nav>
   );
 }
