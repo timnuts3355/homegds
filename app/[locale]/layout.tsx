@@ -26,7 +26,6 @@ export default async function LocaleLayout({
     notFound();
   }
 
-  // next-intl v4: setRequestLocale でサーバーコンポーネントにロケールを伝達
   setRequestLocale(locale);
 
   const messages = await getMessages();
