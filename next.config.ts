@@ -1,11 +1,15 @@
 import type { NextConfig } from "next";
 import withPWA from "@ducanh2912/next-pwa";
+import createNextIntlPlugin from "next-intl/plugin";
+
+// i18n/request.ts をデフォルトパスとして自動検出
+const withNextIntl = createNextIntlPlugin();
 
 const nextConfig: NextConfig = {
   experimental: {},
 };
 
-export default withPWA({
+const withPWAConfig = withPWA({
   dest: "public",
   cacheOnFrontEndNav: true,
   aggressiveFrontEndNavCaching: true,
@@ -14,4 +18,6 @@ export default withPWA({
   workboxOptions: {
     disableDevLogs: true,
   },
-})(nextConfig);
+});
+
+export default withNextIntl(withPWAConfig(nextConfig));

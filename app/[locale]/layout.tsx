@@ -1,5 +1,5 @@
 import { NextIntlClientProvider } from "next-intl";
-import { getMessages } from "next-intl/server";
+import { getMessages, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
@@ -12,6 +12,10 @@ interface LocaleLayoutProps {
   params: Promise<{ locale: string }>;
 }
 
+export function generateStaticParams() {
+  return routing.locales.map((locale) => ({ locale }));
+}
+
 export default async function LocaleLayout({
   children,
   params,
@@ -22,6 +26,9 @@ export default async function LocaleLayout({
     notFound();
   }
 
+  // next-intl v4: setRequestLocale でサーバーコンポーネントにロケールを伝達
+  setRequestLocale(locale);
+
   const messages = await getMessages();
 
   return (
@@ -29,7 +36,6 @@ export default async function LocaleLayout({
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        {/* black-translucent: iPhoneでステータスバーがコンテンツの後ろに重なりGlassデザインと馴染む */}
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="homegds" />
         <meta name="theme-color" content="#f2524a" />
