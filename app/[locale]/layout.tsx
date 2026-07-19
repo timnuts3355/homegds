@@ -26,9 +26,11 @@ export default async function LocaleLayout({
     notFound();
   }
 
+  // v4: Server Component にロケールを伝達
   setRequestLocale(locale);
 
-  const messages = await getMessages();
+  // v4: locale を明示的に渡す
+  const messages = await getMessages({ locale });
 
   return (
     <html lang={locale}>
@@ -42,7 +44,8 @@ export default async function LocaleLayout({
       </head>
       <body>
         <ThemeProvider>
-          <NextIntlClientProvider messages={messages}>
+          {/* v4: locale を NextIntlClientProvider に明示的に渡す */}
+          <NextIntlClientProvider locale={locale} messages={messages}>
             <PageTransition>{children}</PageTransition>
             <TabBar />
           </NextIntlClientProvider>
