@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Search, X, Star, Pencil, Trash2 } from "lucide-react";
 import { getDb } from "@/db";
 import { addHistory } from "@/lib/history";
 import { getStockStatus, sortInventory, nextQuantity, prevQuantity } from "@/lib/stock";
 import { CATEGORY_LABELS } from "@/lib/constants";
-import type { Product } from "@/types";
+import type { Product, StockStatus } from "@/types";
 import Header from "@/components/layout/Header";
 
 const SWIPE_THRESHOLD = 60;
@@ -16,22 +16,46 @@ const SWIPE_MAX       = 80;
 
 interface SwipeState { startX: number; currentX: number; active: boolean; }
 
-export default function InventoryClient() {
+type StockFilter = Extract<StockStatus, "out" | "low"> | null;
+
+const FILTER_LABELS: Record<Extract<StockStatus, "out" | "low">, string> = {
+  out: "在庫不足",
+  low: "在庫が少ない",
+};
+
+interface InventoryClientProps { filter?: StockFilter; }
+
+export default function InventoryClient({ filter = null }: InventoryClientProps) {
+  const router     = useRouter();
+  const pathname   = usePathname();
   const [query, setQuery] = useState("");
   const allProducts = useLiveQuery(() => getDb().products.toArray(), []) ?? [];
+
+  // 1. 在庫状態フィルタを先に適用
+  const statusFiltered = filter
+    ? allProducts.filter(p => getStockStatus(p) === filter)
+    : allProducts;
+
+  // 2. その結果に対して商品名検索を適用
   const filtered = sortInventory(
     query.trim()
-      ? allProducts.filter(p => p.name.toLowerCase().includes(query.trim().toLowerCase()))
-      : allProducts
+      ? statusFiltered.filter(p => p.name.toLowerCase().includes(query.trim().toLowerCase()))
+      : statusFiltered
   );
 
   return (
     <>
       <Header title="在庫" />
       <main className="max-w-2xl mx-auto pb-24" style={{ backgroundColor: "var(--bg)" }}>
+        {filter && (
+          <FilterBanner
+            label={FILTER_LABELS[filter]}
+            onClear={() => router.push(pathname)}
+          />
+        )}
         <SearchBar value={query} onChange={setQuery} />
         {filtered.length === 0 ? (
-          <EmptyState hasQuery={query.trim().length > 0} />
+          <EmptyState hasQuery={query.trim().length > 0 || filter !== null} />
         ) : (
           <div className="list-group">
             {filtered.map((product, index) => (
@@ -45,6 +69,25 @@ export default function InventoryClient() {
         )}
       </main>
     </>
+  );
+}
+
+// ── フィルタ中バナー ──
+function FilterBanner({ label, onClear }: { label: string; onClear: () => void }) {
+  return (
+    <div className="flex items-center justify-between px-4 pt-2">
+      <p className="text-[12px] font-medium" style={{ color: "var(--text-secondary)" }}>
+        フィルタ中：{label}
+      </p>
+      <button
+        type="button"
+        onClick={onClear}
+        className="text-[12px] font-semibold"
+        style={{ color: "var(--accent)" }}
+      >
+        解除
+      </button>
+    </div>
   );
 }
 

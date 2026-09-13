@@ -3,10 +3,13 @@ import InventoryClient from "@/components/inventory/InventoryClient";
 
 interface Props {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ filter?: string }>;
 }
 
-export default async function InventoryPage({ params }: Props) {
+export default async function InventoryPage({ params, searchParams }: Props) {
   const { locale } = await params;
+  const { filter } = await searchParams;
   setRequestLocale(locale);
-  return <InventoryClient />;
+  const stockFilter = filter === "out" || filter === "low" ? filter : null;
+  return <InventoryClient filter={stockFilter} />;
 }
