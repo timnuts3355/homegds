@@ -11,6 +11,7 @@ import { getDb } from "@/db";
 import { addHistory } from "@/lib/history";
 import { CATEGORIES, UNITS } from "@/lib/constants";
 import Header from "@/components/layout/Header";
+import BackButton from "@/components/layout/BackButton";
 
 const editSchema = z.object({
   name:       z.string().min(1, "商品名を入力してください").max(100),
@@ -62,15 +63,15 @@ export default function ProductEditClient({ id }: Props) {
   }, [product, router]);
 
   if (product === undefined) return (
-    <><Header title="" /><div className="flex justify-center pt-20"><p className="text-sm" style={{ color: "var(--text-muted)" }}>読み込み中…</p></div></>
+    <><Header title="" left={<BackButton />} /><div className="flex justify-center pt-20"><p className="text-sm" style={{ color: "var(--text-muted)" }}>読み込み中…</p></div></>
   );
   if (product === null) return (
-    <><Header title="編集" /><div className="flex justify-center pt-20"><p className="text-sm" style={{ color: "var(--text-muted)" }}>商品が見つかりません</p></div></>
+    <><Header title="編集" left={<BackButton />} /><div className="flex justify-center pt-20"><p className="text-sm" style={{ color: "var(--text-muted)" }}>商品が見つかりません</p></div></>
   );
 
   return (
     <>
-      <Header title="編集" />
+      <Header title="編集" left={<BackButton />} />
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <div className="max-w-2xl mx-auto px-4 pt-6 pb-36 space-y-5">
           <FormSection label="商品名" required error={errors.name?.message}>

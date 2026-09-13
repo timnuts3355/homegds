@@ -10,6 +10,7 @@ import { getStockStatus, sortInventory, nextQuantity, prevQuantity } from "@/lib
 import { CATEGORY_LABELS } from "@/lib/constants";
 import type { Product, StockStatus } from "@/types";
 import Header from "@/components/layout/Header";
+import BackButton from "@/components/layout/BackButton";
 
 const SWIPE_THRESHOLD = 60;
 const SWIPE_MAX       = 80;
@@ -45,7 +46,7 @@ export default function InventoryClient({ filter = null }: InventoryClientProps)
 
   return (
     <>
-      <Header title="在庫" />
+      <Header title="在庫" left={<BackButton />} />
       <main className="max-w-2xl mx-auto pb-24" style={{ backgroundColor: "var(--bg)" }}>
         {filter && (
           <FilterBanner

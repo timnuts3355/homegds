@@ -17,10 +17,11 @@ const SWIPE_MAX       = 80;
 
 interface SwipeState { startX: number; currentX: number; active: boolean; }
 
-export function useSwipeQuantity(product: Product) {
+export function useSwipeQuantity(product: Product, options?: { onTap?: () => void }) {
   const [offset, setOffset] = useState(0);
   const [flash, setFlash]   = useState<"add" | "use" | null>(null);
-  const swipe = useRef<SwipeState>({ startX: 0, currentX: 0, active: false });
+  const swipe     = useRef<SwipeState>({ startX: 0, currentX: 0, active: false });
+  const didSwipe  = useRef(false);
 
   const updateQty = useCallback(async (next: number, action: "use" | "restock") => {
     const before = product.quantity;
@@ -32,6 +33,7 @@ export function useSwipeQuantity(product: Product) {
   }, [product]);
 
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    didSwipe.current = false;
     swipe.current = { startX: e.clientX, currentX: e.clientX, active: true };
     (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
   };
@@ -40,6 +42,7 @@ export function useSwipeQuantity(product: Product) {
     if (!swipe.current.active) return;
     swipe.current.currentX = e.clientX;
     const dx = e.clientX - swipe.current.startX;
+    if (Math.abs(dx) > 8) didSwipe.current = true;
     setOffset(Math.max(-SWIPE_MAX, Math.min(SWIPE_MAX, dx)));
   };
 
@@ -54,6 +57,8 @@ export function useSwipeQuantity(product: Product) {
     } else if (dx < -SWIPE_THRESHOLD) {
       await updateQty(prevQuantity(product.quantity), "use");
       setFlash("use"); setTimeout(() => setFlash(null), 600);
+    } else if (!didSwipe.current) {
+      options?.onTap?.();
     }
   };
 

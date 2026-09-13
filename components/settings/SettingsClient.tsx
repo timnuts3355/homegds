@@ -9,6 +9,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { getDb } from "@/db";
 import { productsToCsv, generateExportFilename } from "@/lib/csv";
 import Header from "@/components/layout/Header";
+import BackButton from "@/components/layout/BackButton";
 import CsvImportModal from "./CsvImportModal";
 
 const LANG_STORAGE_KEY = "homegds_locale";
@@ -53,7 +54,7 @@ export default function SettingsClient() {
 
   return (
     <>
-      <Header title={t("title")} />
+      <Header title={t("title")} left={<BackButton />} />
       <main className="max-w-2xl mx-auto pb-24">
 
         <p className="section-label">{t("sectionApp")}</p>

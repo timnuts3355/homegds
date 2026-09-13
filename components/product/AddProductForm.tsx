@@ -3,11 +3,12 @@
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ChevronLeft, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { getDb } from "@/db";
 import { addHistory } from "@/lib/history";
 import { productSchema, type ProductFormValues } from "@/lib/validations";
 import { CATEGORIES, UNITS } from "@/lib/constants";
+import BackButton from "@/components/layout/BackButton";
 
 export default function AddProductForm() {
   const router = useRouter();
@@ -39,13 +40,9 @@ export default function AddProductForm() {
       {/* ヘッダー：Glass */}
       <header className="app-header">
         <div className="flex items-center justify-between w-full max-w-2xl mx-auto">
-          <button type="button" onClick={() => router.back()}
-            className="flex items-center gap-1 text-sm font-medium -ml-1 py-1 px-1"
-            style={{ color: "var(--accent)" }} aria-label="戻る">
-            <ChevronLeft size={20} strokeWidth={2} />戻る
-          </button>
+          <BackButton />
           <h1 className="text-[15px] font-semibold" style={{ color: "var(--text-primary)" }}>商品を追加</h1>
-          <div className="w-12" />
+          <div className="w-10" />
         </div>
       </header>
 

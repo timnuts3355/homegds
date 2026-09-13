@@ -5,6 +5,7 @@ import { getDb } from "@/db";
 import { ACTION_LABELS, ACTION_COLORS } from "@/lib/history";
 import type { HistoryEntry, HistoryAction } from "@/types";
 import Header from "@/components/layout/Header";
+import BackButton from "@/components/layout/BackButton";
 
 export default function HistoryClient() {
   const histories = useLiveQuery(
@@ -13,7 +14,7 @@ export default function HistoryClient() {
 
   return (
     <>
-      <Header title="履歴" />
+      <Header title="履歴" left={<BackButton />} />
       <main className="max-w-2xl mx-auto pb-24" style={{ backgroundColor: "var(--bg)" }}>
         {histories.length === 0 ? (
           <EmptyState />

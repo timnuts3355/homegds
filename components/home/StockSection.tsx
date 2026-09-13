@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter, usePathname } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import type { Product } from "@/types";
 import { CATEGORY_LABELS, HOME_SECTION_LIMIT } from "@/lib/constants";
+import { getLocalePrefix } from "@/lib/locale";
 import { useSwipeQuantity } from "@/hooks/useSwipeQuantity";
 
 interface StockSectionProps {
@@ -60,7 +62,12 @@ export default function StockSection({
 function SwipeableStockRow({
   product, dotColor, isLast,
 }: { product: Product; dotColor: string; isLast: boolean }) {
-  const { offset, flash, handlers } = useSwipeQuantity(product);
+  const router   = useRouter();
+  const pathname = usePathname();
+
+  const { offset, flash, handlers } = useSwipeQuantity(product, {
+    onTap: () => router.push(`${getLocalePrefix(pathname)}/product/${product.id}`),
+  });
 
   const flashBg = flash === "add"
     ? "rgba(137,196,225,0.15)"

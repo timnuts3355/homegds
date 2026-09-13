@@ -9,7 +9,9 @@ import { getDb } from "@/db";
 import { addHistory } from "@/lib/history";
 import { getStockStatus, nextQuantity, prevQuantity } from "@/lib/stock";
 import { CATEGORY_LABELS } from "@/lib/constants";
+import { getLocalePrefix } from "@/lib/locale";
 import Header from "@/components/layout/Header";
+import BackButton from "@/components/layout/BackButton";
 
 interface Props { id: number; }
 
@@ -19,8 +21,15 @@ export default function ProductDetailClient({ id }: Props) {
   const product  = useLiveQuery(() => getDb().products.get(id), [id]);
 
   // 現在のlocale（ja / zh-TW）を維持したままホームへ戻るリンク
-  const localePrefix = pathname.match(/^\/(ja|zh-TW)/)?.[0] ?? "";
-  const homeHref = localePrefix || "/";
+  const homeHref = getLocalePrefix(pathname) || "/";
+
+  // ヘッダー左側：戻る → Home の順
+  const headerLeft = (
+    <>
+      <BackButton />
+      <HomeLinkButton href={homeHref} />
+    </>
+  );
 
   const toggleFavorite = useCallback(async () => {
     if (!product?.id) return;
@@ -46,10 +55,10 @@ export default function ProductDetailClient({ id }: Props) {
   }, [product]);
 
   if (product === undefined) return (
-    <><Header title="" left={<HomeLinkButton href={homeHref} />} /><div className="flex justify-center pt-20"><p className="text-sm" style={{ color: "var(--text-muted)" }}>読み込み中…</p></div></>
+    <><Header title="" left={headerLeft} /><div className="flex justify-center pt-20"><p className="text-sm" style={{ color: "var(--text-muted)" }}>読み込み中…</p></div></>
   );
   if (product === null) return (
-    <><Header title="商品詳細" left={<HomeLinkButton href={homeHref} />} /><div className="flex justify-center pt-20"><p className="text-sm" style={{ color: "var(--text-muted)" }}>商品が見つかりません</p></div></>
+    <><Header title="商品詳細" left={headerLeft} /><div className="flex justify-center pt-20"><p className="text-sm" style={{ color: "var(--text-muted)" }}>商品が見つかりません</p></div></>
   );
 
   const status = getStockStatus(product);
@@ -59,11 +68,11 @@ export default function ProductDetailClient({ id }: Props) {
     <>
       <Header
         title={product.name}
-        left={<HomeLinkButton href={homeHref} />}
+        left={headerLeft}
         right={
           <button
             onClick={() => router.push(`/product/${id}/edit`)}
-            className="flex items-center justify-center w-9 h-9 rounded-full transition-colors active:bg-grad-soft"
+            className="flex items-center justify-center w-10 h-10 rounded-full transition-colors active:bg-grad-soft"
             aria-label="編集"
           >
             <Pencil size={18} strokeWidth={1.8} style={{ color: "var(--accent)" }} />
@@ -178,7 +187,7 @@ function HomeLinkButton({ href }: { href: string }) {
   return (
     <Link
       href={href}
-      className="flex items-center justify-center w-9 h-9 rounded-full transition-colors active:bg-grad-soft -ml-1.5 flex-shrink-0"
+      className="flex items-center justify-center w-10 h-10 rounded-full transition-colors active:bg-grad-soft flex-shrink-0"
       aria-label="ホームへ戻る"
     >
       <HomeIcon size={18} strokeWidth={1.8} style={{ color: "var(--accent)" }} />
