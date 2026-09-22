@@ -1,5 +1,8 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+import { unitLabel } from "@/lib/unit-label";
+
 import { useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
@@ -8,7 +11,6 @@ import { Pencil, Minus, Plus, Home as HomeIcon } from "lucide-react";
 import { getDb } from "@/db";
 import { addHistory } from "@/lib/history";
 import { getStockStatus, nextQuantity, prevQuantity } from "@/lib/stock";
-import { CATEGORY_LABELS } from "@/lib/constants";
 import { getLocalePrefix } from "@/lib/locale";
 import Header from "@/components/layout/Header";
 import BackButton from "@/components/layout/BackButton";
@@ -16,9 +18,10 @@ import BackButton from "@/components/layout/BackButton";
 interface Props { id: number; }
 
 export default function ProductDetailClient({ id }: Props) {
+  const t = useTranslations();
   const router   = useRouter();
   const pathname = usePathname();
-  const product  = useLiveQuery(() => getDb().products.get(id), [id]);
+  const product  = useLiveQuery(async () => (await getDb().products.get(id)) ?? null, [id]);
 
   // 現在のlocale（ja / zh-TW）を維持したままホームへ戻るリンク
   const homeHref = getLocalePrefix(pathname) || "/";
@@ -55,10 +58,10 @@ export default function ProductDetailClient({ id }: Props) {
   }, [product]);
 
   if (product === undefined) return (
-    <><Header title="" left={headerLeft} /><div className="flex justify-center pt-20"><p className="text-sm" style={{ color: "var(--text-muted)" }}>読み込み中…</p></div></>
+    <><Header title="" left={headerLeft} /><div className="flex justify-center pt-20"><p className="text-sm" style={{ color: "var(--text-muted)" }}>{t("common.loading")}</p></div></>
   );
   if (product === null) return (
-    <><Header title="商品詳細" left={headerLeft} /><div className="flex justify-center pt-20"><p className="text-sm" style={{ color: "var(--text-muted)" }}>商品が見つかりません</p></div></>
+    <><Header title={t("product.detail")} left={headerLeft} /><div className="flex justify-center pt-20"><p className="text-sm" style={{ color: "var(--text-muted)" }}>{t("product.notFound")}</p></div></>
   );
 
   const status = getStockStatus(product);
@@ -71,9 +74,9 @@ export default function ProductDetailClient({ id }: Props) {
         left={headerLeft}
         right={
           <button
-            onClick={() => router.push(`/product/${id}/edit`)}
+            onClick={() => router.push(`${getLocalePrefix(pathname)}/product/${id}/edit`)}
             className="flex items-center justify-center w-10 h-10 rounded-full transition-colors active:bg-grad-soft"
-            aria-label="編集"
+            aria-label={t("common.edit")}
           >
             <Pencil size={18} strokeWidth={1.8} style={{ color: "var(--accent)" }} />
           </button>
@@ -85,13 +88,13 @@ export default function ProductDetailClient({ id }: Props) {
         {/* 数量セクション */}
         <div className="px-4 pt-8 pb-6 flex flex-col items-center gap-2">
           <p className="text-[11px] font-medium uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
-            現在の在庫
+            {t("product.quantity")}
           </p>
           <div className="flex items-end gap-1">
             <span className="text-6xl font-bold tabular-nums leading-none" style={{ color: qtyColor }}>
               {product.quantity}
             </span>
-            <span className="text-xl mb-1" style={{ color: "var(--text-muted)" }}>{product.unit}</span>
+            <span className="text-xl mb-1" style={{ color: "var(--text-muted)" }}>{unitLabel(product.unit, t)}</span>
           </div>
 
           {status !== "ok" && (
@@ -102,7 +105,7 @@ export default function ProductDetailClient({ id }: Props) {
                 color:      status === "out" ? "#f2524a" : "#9b87e0",
               }}
             >
-              {status === "out" ? "在庫不足" : "在庫が少ない"}
+              {status === "out" ? t("stock.out") : t("stock.low")}
             </span>
           )}
 
@@ -113,45 +116,45 @@ export default function ProductDetailClient({ id }: Props) {
               disabled={product.quantity <= 0}
               className="flex items-center gap-2 px-6 py-3 rounded-ios-lg transition-opacity active:opacity-70 disabled:opacity-25"
               style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}
-              aria-label="使用"
+              aria-label={t("common.use")}
             >
               <Minus size={16} strokeWidth={2} style={{ color: "var(--text-secondary)" }} />
-              <span className="text-[15px] font-semibold" style={{ color: "var(--text-primary)" }}>使用</span>
+              <span className="text-[15px] font-semibold" style={{ color: "var(--text-primary)" }}>{t("common.use")}</span>
             </button>
             {/* 補充：グラデーション */}
             <button
               onClick={handleAdd}
               className="flex items-center gap-2 px-6 py-3 rounded-ios-lg bg-grad text-white transition-opacity active:opacity-80"
-              aria-label="補充"
+              aria-label={t("common.restock")}
             >
               <Plus size={16} strokeWidth={2.5} />
-              <span className="text-[15px] font-semibold">補充</span>
+              <span className="text-[15px] font-semibold">{t("common.restock")}</span>
             </button>
           </div>
         </div>
 
         {/* 詳細リスト */}
         <div className="list-group">
-          <DetailRow label="商品名">
+          <DetailRow label={t("product.name")}>
             <span className="text-[15px] text-right" style={{ color: "var(--text-primary)", wordBreak: "break-all" }}>{product.name}</span>
           </DetailRow>
-          <DetailRow label="カテゴリ">
-            <span className="text-[15px]" style={{ color: "var(--text-primary)" }}>{CATEGORY_LABELS[product.category]}</span>
+          <DetailRow label={t("product.category")}>
+            <span className="text-[15px]" style={{ color: "var(--text-primary)" }}>{t(`categories.${product.category}`)}</span>
           </DetailRow>
-          <DetailRow label="単位">
-            <span className="text-[15px]" style={{ color: "var(--text-primary)" }}>{product.unit}</span>
+          <DetailRow label={t("product.unit")}>
+            <span className="text-[15px]" style={{ color: "var(--text-primary)" }}>{unitLabel(product.unit, t)}</span>
           </DetailRow>
-          <DetailRow label="最低在庫">
+          <DetailRow label={t("product.minStock")}>
             <span className="text-[15px] tabular-nums" style={{ color: "var(--text-primary)" }}>
               {product.minStock}
-              <span className="text-[12px] ml-1" style={{ color: "var(--text-muted)" }}>{product.unit}</span>
+              <span className="text-[12px] ml-1" style={{ color: "var(--text-muted)" }}>{unitLabel(product.unit, t)}</span>
             </span>
           </DetailRow>
-          <DetailRow label="お気に入り" isLast>
+          <DetailRow label={t("product.favorite")} isLast>
             <button
               onClick={toggleFavorite}
               className="flex items-center gap-2 transition-opacity active:opacity-60"
-              aria-label={product.isFavorite ? "お気に入りを解除" : "お気に入りに追加"}
+              aria-label={product.isFavorite ? t("product.favoriteRemove") : t("product.favoriteAdd")}
             >
               {product.isFavorite ? (
                 <svg width="18" height="18" viewBox="0 0 24 24">
@@ -172,7 +175,7 @@ export default function ProductDetailClient({ id }: Props) {
                 </svg>
               )}
               <span className="text-[15px]" style={{ color: product.isFavorite ? "#9b87e0" : "var(--text-muted)" }}>
-                {product.isFavorite ? "登録済み" : "未登録"}
+                {product.isFavorite ? t("product.favorited") : t("product.notFavorited")}
               </span>
             </button>
           </DetailRow>
@@ -184,11 +187,12 @@ export default function ProductDetailClient({ id }: Props) {
 
 // ── ホームへ戻るボタン（locale維持） ──
 function HomeLinkButton({ href }: { href: string }) {
+  const t = useTranslations();
   return (
     <Link
       href={href}
       className="flex items-center justify-center w-10 h-10 rounded-full transition-colors active:bg-grad-soft flex-shrink-0"
-      aria-label="ホームへ戻る"
+      aria-label={t("common.home")}
     >
       <HomeIcon size={18} strokeWidth={1.8} style={{ color: "var(--accent)" }} />
     </Link>

@@ -84,7 +84,10 @@ export interface CsvParseResult {
  * CSVテキストをパースして商品データに変換する。
  * BOMの有無を問わず処理する。
  */
-export function parseProductsCsv(text: string): CsvParseResult {
+export function parseProductsCsv(
+  text: string,
+  t: (key: string, values?: Record<string, string | number>) => string
+): CsvParseResult {
   // BOM除去
   const clean = text.replace(/^\uFEFF/, "");
   const lines = splitCsvLines(clean);
@@ -92,7 +95,7 @@ export function parseProductsCsv(text: string): CsvParseResult {
   const result: CsvParseResult = { rows: [], errors: [] };
 
   if (lines.length === 0) {
-    result.errors.push({ line: 0, message: "ファイルが空です。" });
+    result.errors.push({ line: 0, message: t("csv.errors.empty") });
     return result;
   }
 
@@ -106,7 +109,7 @@ export function parseProductsCsv(text: string): CsvParseResult {
   if (!headerOk) {
     result.errors.push({
       line: 1,
-      message: `CSVのヘッダー形式が正しくありません。期待される列: ${requiredHeaders.join(", ")}`,
+      message: t("csv.errors.header", { columns: requiredHeaders.join(", ") }),
     });
     return result;
   }
@@ -119,7 +122,7 @@ export function parseProductsCsv(text: string): CsvParseResult {
     const cells = parseCsvLine(raw);
 
     if (cells.length < 6) {
-      result.errors.push({ line: lineNo, message: "列数が不足しています（最低6列必要です）。" });
+      result.errors.push({ line: lineNo, message: t("csv.errors.columns") });
       continue;
     }
 
@@ -127,7 +130,7 @@ export function parseProductsCsv(text: string): CsvParseResult {
 
     const name = nameRaw.trim();
     if (!name) {
-      result.errors.push({ line: lineNo, message: "商品名が空です。" });
+      result.errors.push({ line: lineNo, message: t("csv.errors.name") });
       continue;
     }
 
@@ -135,20 +138,20 @@ export function parseProductsCsv(text: string): CsvParseResult {
     if (!CATEGORY_VALUES.includes(category)) {
       result.errors.push({
         line: lineNo,
-        message: `カテゴリ「${categoryRaw}」は不正な値です（有効値: ${CATEGORY_VALUES.join(", ")}）。`,
+        message: t("csv.errors.category", { value: categoryRaw, allowed: CATEGORY_VALUES.join(", ") }),
       });
       continue;
     }
 
     const quantity = Number(qtyRaw.trim());
     if (Number.isNaN(quantity) || quantity < 0) {
-      result.errors.push({ line: lineNo, message: `数量「${qtyRaw}」は不正な数値です。` });
+      result.errors.push({ line: lineNo, message: t("csv.errors.quantity", { value: qtyRaw }) });
       continue;
     }
 
     const minStock = Number(minRaw.trim());
     if (Number.isNaN(minStock) || minStock < 0) {
-      result.errors.push({ line: lineNo, message: `最低在庫「${minRaw}」は不正な数値です。` });
+      result.errors.push({ line: lineNo, message: t("csv.errors.minStock", { value: minRaw }) });
       continue;
     }
 
@@ -156,7 +159,7 @@ export function parseProductsCsv(text: string): CsvParseResult {
     if (!UNIT_VALUES.includes(unit)) {
       result.errors.push({
         line: lineNo,
-        message: `単位「${unitRaw}」は不正な値です（有効値: ${UNIT_VALUES.join(", ")}）。`,
+        message: t("csv.errors.unit", { value: unitRaw, allowed: UNIT_VALUES.join(", ") }),
       });
       continue;
     }

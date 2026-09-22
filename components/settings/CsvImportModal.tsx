@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { useRef, useState } from "react";
 import { Upload, AlertCircle, CheckCircle2, X } from "lucide-react";
 import { getDb } from "@/db";
@@ -28,6 +30,7 @@ interface Progress {
 }
 
 export default function CsvImportModal({ onClose }: Props) {
+  const t = useTranslations();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [step, setStep]               = useState<Step>("select");
   const [parsedRows, setParsedRows]   = useState<ParsedCsvRow[]>([]);
@@ -52,7 +55,7 @@ export default function CsvImportModal({ onClose }: Props) {
     setProgress({ phase: "reading", current: 0, total: 0 });
 
     const text = await file.text();
-    const result = parseProductsCsv(text);
+    const result = parseProductsCsv(text, t);
 
     // パース完了 → 件数確定
     setProgress({ phase: "reading", current: result.rows.length, total: result.rows.length });
@@ -141,7 +144,7 @@ export default function CsvImportModal({ onClose }: Props) {
       onKeyDown={(e) => { if (e.key === "Escape" && !isBusy) onClose(); }}
       role="dialog"
       aria-modal="true"
-      aria-label="CSVインポート"
+      aria-label={t("settings.import")}
     >
       <div className="w-full max-w-sm modal-sheet" onClick={(e) => e.stopPropagation()}>
 
@@ -149,11 +152,11 @@ export default function CsvImportModal({ onClose }: Props) {
         <div className="flex items-center justify-between px-5 py-4"
           style={{ borderBottom: "0.5px solid var(--glass-border)" }}>
           <p className="text-[16px] font-semibold" style={{ color: "var(--text-primary)" }}>
-            CSVインポート
+            {t("settings.import")}
           </p>
           {/* 完了ステップ以外・処理中以外では × を表示しない */}
           {step === "select" && (
-            <button onClick={onClose} aria-label="閉じる" className="p-1 -m-1">
+            <button onClick={onClose} aria-label={t("common.close")} className="p-1 -m-1">
               <X size={18} style={{ color: "var(--text-muted)" }} />
             </button>
           )}
@@ -168,8 +171,8 @@ export default function CsvImportModal({ onClose }: Props) {
                 <Upload size={22} style={{ color: "var(--accent)" }} strokeWidth={1.8} />
               </div>
               <p className="text-[13px] text-center leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-                CSVファイルを選択してください。<br />
-                商品名・カテゴリ・数量・最低在庫・単位・お気に入りの列が必要です。
+                {t("csv.selectHint")}<br />
+                {t("csv.columnsHint")}
               </p>
               <input
                 ref={fileInputRef}
@@ -182,7 +185,7 @@ export default function CsvImportModal({ onClose }: Props) {
                 onClick={handlePickFile}
                 className="w-full bg-grad text-white font-semibold text-[15px] py-3 rounded-ios-lg transition-opacity active:opacity-80"
               >
-                ファイルを選択
+                {t("csv.selectFile")}
               </button>
             </div>
           )}
@@ -193,12 +196,12 @@ export default function CsvImportModal({ onClose }: Props) {
               <div>
                 <p className="text-[14px] font-semibold mb-0.5" style={{ color: "var(--text-primary)" }}>
                   {progress.phase === "reading"
-                    ? "CSV読み込み中…"
-                    : "インポート中…"
+                    ? t("csv.reading")
+                    : t("csv.importing")
                   }
                 </p>
                 <p className="text-[13px] tabular-nums" style={{ color: "var(--text-muted)" }}>
-                  {progress.current} / {progress.total > 0 ? progress.total : "…"} 件
+                  {t("csv.progress", { current: progress.current, total: progress.total > 0 ? progress.total : "…" })}
                 </p>
               </div>
               <ProgressBar current={progress.current} total={progress.total} />
@@ -210,13 +213,13 @@ export default function CsvImportModal({ onClose }: Props) {
             <div className="flex flex-col items-center gap-3 py-2">
               <AlertCircle size={28} style={{ color: "#f2524a" }} strokeWidth={1.8} />
               <p className="text-[14px] font-semibold text-center" style={{ color: "var(--text-primary)" }}>
-                CSVを読み込めませんでした
+                {t("csv.readFailed")}
               </p>
               <div className="w-full max-h-40 overflow-y-auto rounded-ios"
                 style={{ backgroundColor: "var(--surface-alt)", border: "1px solid var(--border)" }}>
                 {parseErrors.map((err, i) => (
                   <p key={i} className="text-[12px] px-3 py-2" style={{ color: "#f2524a" }}>
-                    {err.line > 0 ? `${err.line}行目: ` : ""}{err.message}
+                    {err.line > 0 ? t("csv.line", { line: err.line, message: err.message }) : err.message}
                   </p>
                 ))}
               </div>
@@ -225,7 +228,7 @@ export default function CsvImportModal({ onClose }: Props) {
                 className="w-full mt-1 py-3 rounded-ios-lg text-[15px] font-semibold transition-opacity active:opacity-70"
                 style={{ border: "1px solid var(--border)", color: "var(--text-primary)" }}
               >
-                別のファイルを選び直す
+                {t("csv.retry")}
               </button>
             </div>
           )}
@@ -236,7 +239,7 @@ export default function CsvImportModal({ onClose }: Props) {
               <div className="flex items-center gap-2">
                 <CheckCircle2 size={18} style={{ color: "var(--accent)" }} />
                 <p className="text-[14px]" style={{ color: "var(--text-primary)" }}>
-                  {parsedRows.length}件の商品データを読み込みました
+                  {t("csv.loaded", { count: parsedRows.length })}
                 </p>
               </div>
 
@@ -244,17 +247,17 @@ export default function CsvImportModal({ onClose }: Props) {
                 <div className="rounded-ios px-3 py-2"
                   style={{ backgroundColor: "rgba(242,82,74,0.08)", border: "1px solid rgba(242,82,74,0.25)" }}>
                   <p className="text-[12px] font-semibold mb-1" style={{ color: "#f2524a" }}>
-                    {parseErrors.length}件のエラー行はスキップされます
+                    {t("csv.skippedErrors", { count: parseErrors.length })}
                   </p>
                   <div className="max-h-20 overflow-y-auto space-y-0.5">
                     {parseErrors.slice(0, 5).map((err, i) => (
                       <p key={i} className="text-[11px]" style={{ color: "#de3b33" }}>
-                        {err.line}行目: {err.message}
+                        {t("csv.line", { line: err.line, message: err.message })}
                       </p>
                     ))}
                     {parseErrors.length > 5 && (
                       <p className="text-[11px]" style={{ color: "#de3b33" }}>
-                        他 {parseErrors.length - 5}件…
+                        {t("csv.more", { count: parseErrors.length - 5 })}
                       </p>
                     )}
                   </div>
@@ -263,7 +266,7 @@ export default function CsvImportModal({ onClose }: Props) {
 
               {duplicateCount > 0 && (
                 <p className="text-[13px]" style={{ color: "var(--text-secondary)" }}>
-                  同名の商品が{duplicateCount}件あります。1件ずつ処理方法を確認します。
+                  {t("csv.duplicates", { count: duplicateCount })}
                 </p>
               )}
 
@@ -273,14 +276,14 @@ export default function CsvImportModal({ onClose }: Props) {
                   className="flex-1 py-3 rounded-ios-lg text-[15px] font-medium transition-opacity active:opacity-70"
                   style={{ border: "1px solid var(--border)", color: "var(--text-primary)" }}
                 >
-                  キャンセル
+                  {t("common.cancel")}
                 </button>
                 <button
                   onClick={handleImport}
                   disabled={isProcessing || parsedRows.length === 0}
                   className="flex-1 bg-grad disabled:opacity-40 text-white font-semibold text-[15px] py-3 rounded-ios-lg transition-opacity active:opacity-80"
                 >
-                  インポート
+                  {t("csv.importAction")}
                 </button>
               </div>
             </div>
@@ -289,7 +292,7 @@ export default function CsvImportModal({ onClose }: Props) {
           {/* ── ステップ: 重複行ごとの解決 ── */}
           {step === "resolving" && !pendingRow && (
             <div className="flex flex-col items-center gap-2 py-8">
-              <p className="text-[13px]" style={{ color: "var(--text-muted)" }}>処理中…</p>
+              <p className="text-[13px]" style={{ color: "var(--text-muted)" }}>{t("common.processing")}</p>
             </div>
           )}
           {step === "resolving" && pendingRow && (
@@ -298,10 +301,10 @@ export default function CsvImportModal({ onClose }: Props) {
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <p className="text-[13px] font-semibold" style={{ color: "var(--text-secondary)" }}>
-                    重複確認中…
+                    {t("csv.checkingDuplicates")}
                   </p>
                   <p className="text-[12px] tabular-nums font-semibold" style={{ color: "var(--accent)" }}>
-                    {pendingRow.index + 1} / {pendingRow.total} 件
+                    {t("csv.progress", { current: pendingRow.index + 1, total: pendingRow.total })}
                   </p>
                 </div>
                 <ProgressBar current={pendingRow.index + 1} total={pendingRow.total} />
@@ -309,19 +312,19 @@ export default function CsvImportModal({ onClose }: Props) {
 
               <div>
                 <p className="text-[15px] font-semibold mb-0.5" style={{ color: "var(--text-primary)" }}>
-                  「{pendingRow.row.name}」は既に登録されています
+                  {t("csv.exists", { name: pendingRow.row.name })}
                 </p>
                 <p className="text-[12px]" style={{ color: "var(--text-secondary)" }}>
-                  この商品をどう処理しますか？
+                  {t("csv.resolve")}
                 </p>
               </div>
 
               <div className="flex flex-col gap-2">
-                <ResolveButton label="この商品だけ上書き" onClick={() => handleResolve("overwrite")} primary />
-                <ResolveButton label="この商品だけスキップ" onClick={() => handleResolve("skip")} />
+                <ResolveButton label={t("csv.overwriteOne")} onClick={() => handleResolve("overwrite")} primary />
+                <ResolveButton label={t("csv.skipOne")} onClick={() => handleResolve("skip")} />
                 <div className="h-px my-0.5" style={{ backgroundColor: "var(--border-soft)" }} />
-                <ResolveButton label="以降すべて上書き" onClick={() => handleResolve("overwrite-all")} />
-                <ResolveButton label="以降すべてスキップ" onClick={() => handleResolve("skip-all")} />
+                <ResolveButton label={t("csv.overwriteAll")} onClick={() => handleResolve("overwrite-all")} />
+                <ResolveButton label={t("csv.skipAll")} onClick={() => handleResolve("skip-all")} />
               </div>
             </div>
           )}
@@ -332,7 +335,7 @@ export default function CsvImportModal({ onClose }: Props) {
               <div className="flex flex-col items-center gap-2 pt-1">
                 <CheckCircle2 size={32} style={{ color: "var(--accent)" }} strokeWidth={1.5} />
                 <p className="text-[16px] font-semibold" style={{ color: "var(--text-primary)" }}>
-                  インポートが完了しました
+                  {t("csv.done")}
                 </p>
               </div>
 
@@ -342,25 +345,25 @@ export default function CsvImportModal({ onClose }: Props) {
                 style={{ border: "1px solid var(--border)" }}
               >
                 <SummaryRow
-                  label="新規追加"
+                  label={t("csv.added")}
                   count={summary.added}
                   accent={summary.added > 0 ? "var(--accent)" : undefined}
                   isLast={false}
                 />
                 <SummaryRow
-                  label="上書き"
+                  label={t("csv.overwritten")}
                   count={summary.overwritten}
                   accent={summary.overwritten > 0 ? "#9b87e0" : undefined}
                   isLast={false}
                 />
                 <SummaryRow
-                  label="スキップ"
+                  label={t("csv.skipped")}
                   count={summary.skipped}
                   isLast={parseErrors.length === 0}
                 />
                 {parseErrors.length > 0 && (
                   <SummaryRow
-                    label="エラー（スキップ）"
+                    label={t("csv.errorsSkipped")}
                     count={parseErrors.length}
                     accent={parseErrors.length > 0 ? "#f2524a" : undefined}
                     isLast
@@ -373,7 +376,7 @@ export default function CsvImportModal({ onClose }: Props) {
                 onClick={onClose}
                 className="w-full bg-grad text-white font-semibold text-[15px] py-3.5 rounded-ios-lg transition-opacity active:opacity-80"
               >
-                閉じる
+                {t("common.close")}
               </button>
             </div>
           )}
@@ -405,6 +408,7 @@ function ResolveButton({
 function SummaryRow({
   label, count, accent, isLast,
 }: { label: string; count: number; accent?: string; isLast: boolean }) {
+  const t = useTranslations();
   return (
     <div
       className="flex items-center justify-between px-4 py-3"
@@ -415,7 +419,7 @@ function SummaryRow({
         className="text-[15px] font-bold tabular-nums"
         style={{ color: accent ?? "var(--text-muted)" }}
       >
-        {count}件
+        {t("csv.count", { count })}
       </span>
     </div>
   );

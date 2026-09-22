@@ -1,10 +1,13 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+import { unitLabel } from "@/lib/unit-label";
+
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import type { Product } from "@/types";
-import { CATEGORY_LABELS, HOME_SECTION_LIMIT } from "@/lib/constants";
+import { HOME_SECTION_LIMIT } from "@/lib/constants";
 import { getLocalePrefix } from "@/lib/locale";
 import { useSwipeQuantity } from "@/hooks/useSwipeQuantity";
 
@@ -19,6 +22,7 @@ interface StockSectionProps {
 export default function StockSection({
   title, products, accentColor, dotColor, showAllHref,
 }: StockSectionProps) {
+  const t = useTranslations();
   const visible = products.slice(0, HOME_SECTION_LIMIT);
   const hasMore = products.length > HOME_SECTION_LIMIT;
   if (products.length === 0) return null;
@@ -49,7 +53,7 @@ export default function StockSection({
         ))}
         {hasMore && (
           <Link href={showAllHref} className="list-row justify-between">
-            <span className="text-[14px]" style={{ color: "var(--accent)" }}>すべて見る</span>
+            <span className="text-[14px]" style={{ color: "var(--accent)" }}>{t("common.showAll")}</span>
             <ChevronRight size={15} style={{ color: "var(--text-muted)" }} />
           </Link>
         )}
@@ -62,6 +66,7 @@ export default function StockSection({
 function SwipeableStockRow({
   product, dotColor, isLast,
 }: { product: Product; dotColor: string; isLast: boolean }) {
+  const t = useTranslations();
   const router   = useRouter();
   const pathname = usePathname();
 
@@ -80,12 +85,12 @@ function SwipeableStockRow({
       {/* スワイプ背景（右スワイプ＝補充） */}
       <div className="absolute inset-0 flex items-center pl-5 pointer-events-none select-none"
         style={{ background: "linear-gradient(135deg,#89c4e1,#b8a9e8)" }}>
-        <span className="text-white text-xs font-bold">＋ 補充</span>
+        <span className="text-white text-xs font-bold">＋ {t("common.restock")}</span>
       </div>
       {/* スワイプ背景（左スワイプ＝使用） */}
       <div className="absolute inset-0 flex items-center justify-end pr-5 pointer-events-none select-none"
         style={{ background: "linear-gradient(135deg,#b8a9e8,#f2524a)" }}>
-        <span className="text-white text-xs font-bold">使用 −</span>
+        <span className="text-white text-xs font-bold">{t("common.use")} −</span>
       </div>
 
       <div
@@ -103,11 +108,11 @@ function SwipeableStockRow({
           {product.name}
         </span>
         <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>
-          {CATEGORY_LABELS[product.category]}
+          {t(`categories.${product.category}`)}
         </span>
         <span className="text-[15px] font-bold ml-2 tabular-nums" style={{ color: "var(--text-primary)" }}>
           {product.quantity}
-          <span className="text-[11px] font-normal ml-0.5" style={{ color: "var(--text-muted)" }}>{product.unit}</span>
+          <span className="text-[11px] font-normal ml-0.5" style={{ color: "var(--text-muted)" }}>{unitLabel(product.unit, t)}</span>
         </span>
       </div>
     </div>

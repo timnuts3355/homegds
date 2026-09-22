@@ -1,24 +1,29 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
+import { unitLabel } from "@/lib/unit-label";
+
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ChevronDown } from "lucide-react";
 import { getDb } from "@/db";
 import { addHistory } from "@/lib/history";
-import { productSchema, type ProductFormValues } from "@/lib/validations";
+import { createProductSchema, type ProductFormValues } from "@/lib/validations";
 import { CATEGORIES, UNITS } from "@/lib/constants";
 import BackButton from "@/components/layout/BackButton";
 
 export default function AddProductForm() {
+  const t = useTranslations();
   const router = useRouter();
+  const locale = useLocale();
 
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<ProductFormValues>({
-    resolver: zodResolver(productSchema),
+    resolver: zodResolver(createProductSchema(t)),
     defaultValues: {
       name: "", category: "food", quantity: 0,
       unit: "個", minStock: 1, isFavorite: false,
@@ -32,7 +37,7 @@ export default function AddProductForm() {
       productId: id as number, productName: values.name, action: "add",
       quantityBefore: null, quantityAfter: values.quantity, unit: values.unit,
     });
-    router.push("/");
+    router.push(`/${locale}`);
   };
 
   return (
@@ -41,7 +46,7 @@ export default function AddProductForm() {
       <header className="app-header">
         <div className="flex items-center justify-between w-full max-w-2xl mx-auto">
           <BackButton />
-          <h1 className="text-[15px] font-semibold" style={{ color: "var(--text-primary)" }}>商品を追加</h1>
+          <h1 className="text-[15px] font-semibold" style={{ color: "var(--text-primary)" }}>{t("product.add")}</h1>
           <div className="w-10" />
         </div>
       </header>
@@ -49,15 +54,15 @@ export default function AddProductForm() {
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <div className="max-w-2xl mx-auto px-4 pt-6 pb-32 space-y-6">
 
-          <FormSection label="商品名" required error={errors.name?.message}>
-            <input {...register("name")} type="text" placeholder="例：醤油、ティッシュ" autoFocus
+          <FormSection label={t("product.name")} required error={errors.name?.message}>
+            <input {...register("name")} type="text" placeholder={t("product.namePlaceholder")} autoFocus
               className="form-input" />
           </FormSection>
 
-          <FormSection label="カテゴリ" required error={errors.category?.message}>
+          <FormSection label={t("product.category")} required error={errors.category?.message}>
             <div className="relative">
               <select {...register("category")} className="form-input appearance-none pr-8 cursor-pointer">
-                {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+                {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{t(`categories.${c.value}`)}</option>)}
               </select>
               <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
                 style={{ color: "var(--text-muted)" }} />
@@ -65,14 +70,14 @@ export default function AddProductForm() {
           </FormSection>
 
           <div className="grid grid-cols-2 gap-3">
-            <FormSection label="現在の在庫" required error={errors.quantity?.message}>
+            <FormSection label={t("product.quantity")} required error={errors.quantity?.message}>
               <input {...register("quantity")} type="number" inputMode="numeric" min={0} placeholder="0"
                 className="form-input" />
             </FormSection>
-            <FormSection label="単位" required error={errors.unit?.message}>
+            <FormSection label={t("product.unit")} required error={errors.unit?.message}>
               <div className="relative">
                 <select {...register("unit")} className="form-input appearance-none pr-8 cursor-pointer">
-                  {UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
+                  {UNITS.map((u) => <option key={u} value={u}>{unitLabel(u, t)}</option>)}
                 </select>
                 <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
                   style={{ color: "var(--text-muted)" }} />
@@ -80,8 +85,8 @@ export default function AddProductForm() {
             </FormSection>
           </div>
 
-          <FormSection label="最低在庫" required error={errors.minStock?.message}
-            hint="この数を下回ると補充が必要と表示されます">
+          <FormSection label={t("product.minStock")} required error={errors.minStock?.message}
+            hint={t("product.minStockHint")}>
             <input {...register("minStock")} type="number" inputMode="numeric" min={0} placeholder="1"
               className="form-input" />
           </FormSection>
@@ -99,7 +104,7 @@ export default function AddProductForm() {
           <div className="max-w-2xl mx-auto">
             <button type="submit" disabled={isSubmitting}
               className="w-full bg-grad disabled:opacity-40 text-white font-semibold text-base py-3.5 rounded-ios-lg transition-opacity active:opacity-80">
-              {isSubmitting ? "保存中…" : "保存する"}
+              {isSubmitting ? t("common.saving") : t("common.save")}
             </button>
           </div>
         </div>

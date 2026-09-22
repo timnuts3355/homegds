@@ -27,7 +27,7 @@ const HIDE_TABBAR_PATTERN = /^\/(add|product\/)/;
 
 export default function TabBar() {
   const pathname     = usePathname();
-  const t            = useTranslations("nav");
+  const t            = useTranslations();
   const cleanPath    = pathname.replace(/^\/(ja|zh-TW)/, "") || "/";
   const localePrefix = pathname.match(/^\/(ja|zh-TW)/)?.[0] ?? "";
 
@@ -36,7 +36,7 @@ export default function TabBar() {
   const tabs: TabId[] = ["home", "inventory", "history", "settings"];
 
   return (
-    <nav className="tab-bar" aria-label="メインナビゲーション">
+    <nav className="tab-bar" aria-label={t("common.mainNav")}>
       <div className="flex w-full max-w-2xl mx-auto pb-safe">
         {tabs.map((tabId) => {
           const Icon     = TAB_ICONS[tabId];
@@ -67,7 +67,7 @@ export default function TabBar() {
                   isActive ? "font-semibold text-grad" : "font-medium"
                 }`}
               >
-                {t(tabId)}
+                {t(`nav.${tabId}`)}
               </span>
               {isActive && <span className="tab-active-dot" />}
             </Link>

@@ -1,5 +1,8 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
+import { unitLabel } from "@/lib/unit-label";
+
 import { useState, useRef, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useLiveQuery } from "dexie-react-hooks";
@@ -7,7 +10,6 @@ import { Search, X, Star, Pencil, Trash2 } from "lucide-react";
 import { getDb } from "@/db";
 import { addHistory } from "@/lib/history";
 import { getStockStatus, sortInventory, nextQuantity, prevQuantity } from "@/lib/stock";
-import { CATEGORY_LABELS } from "@/lib/constants";
 import type { Product, StockStatus } from "@/types";
 import Header from "@/components/layout/Header";
 import BackButton from "@/components/layout/BackButton";
@@ -19,14 +21,10 @@ interface SwipeState { startX: number; currentX: number; active: boolean; }
 
 type StockFilter = Extract<StockStatus, "out" | "low"> | null;
 
-const FILTER_LABELS: Record<Extract<StockStatus, "out" | "low">, string> = {
-  out: "在庫不足",
-  low: "在庫が少ない",
-};
-
 interface InventoryClientProps { filter?: StockFilter; }
 
 export default function InventoryClient({ filter = null }: InventoryClientProps) {
+  const t = useTranslations();
   const router     = useRouter();
   const pathname   = usePathname();
   const [query, setQuery] = useState("");
@@ -46,11 +44,11 @@ export default function InventoryClient({ filter = null }: InventoryClientProps)
 
   return (
     <>
-      <Header title="在庫" left={<BackButton />} />
+      <Header title={t("nav.inventory")} left={<BackButton />} />
       <main className="max-w-2xl mx-auto pb-24" style={{ backgroundColor: "var(--bg)" }}>
         {filter && (
           <FilterBanner
-            label={FILTER_LABELS[filter]}
+            label={t(`stock.${filter}`)}
             onClear={() => router.push(pathname)}
           />
         )}
@@ -75,10 +73,11 @@ export default function InventoryClient({ filter = null }: InventoryClientProps)
 
 // ── フィルタ中バナー ──
 function FilterBanner({ label, onClear }: { label: string; onClear: () => void }) {
+  const t = useTranslations();
   return (
     <div className="flex items-center justify-between px-4 pt-2">
       <p className="text-[12px] font-medium" style={{ color: "var(--text-secondary)" }}>
-        フィルタ中：{label}
+        {t("inventory.filter", { label })}
       </p>
       <button
         type="button"
@@ -86,7 +85,7 @@ function FilterBanner({ label, onClear }: { label: string; onClear: () => void }
         className="text-[12px] font-semibold"
         style={{ color: "var(--accent)" }}
       >
-        解除
+        {t("inventory.clearFilter")}
       </button>
     </div>
   );
@@ -94,6 +93,7 @@ function FilterBanner({ label, onClear }: { label: string; onClear: () => void }
 
 // ── 検索バー ──
 function SearchBar({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const t = useTranslations();
   return (
     <div className="px-4 py-2">
       <div className="relative flex items-center">
@@ -102,13 +102,13 @@ function SearchBar({ value, onChange }: { value: string; onChange: (v: string) =
           type="search"
           value={value}
           onChange={e => onChange(e.target.value)}
-          placeholder="商品名で検索"
+          placeholder={t("inventory.search")}
           className="form-input pl-9 pr-8 py-2 text-sm"
           style={{ backgroundColor: "var(--surface-alt)", border: "none" }}
         />
         {value && (
           <button type="button" onClick={() => onChange("")}
-            className="absolute right-2.5" style={{ color: "var(--text-muted)" }} aria-label="検索をクリア">
+            className="absolute right-2.5" style={{ color: "var(--text-muted)" }} aria-label={t("inventory.clearSearch")}>
             <X size={14} strokeWidth={2} />
           </button>
         )}
@@ -119,7 +119,9 @@ function SearchBar({ value, onChange }: { value: string; onChange: (v: string) =
 
 // ── 商品行 ──
 function InventoryRow({ product, isLast }: { product: Product; isLast: boolean }) {
+  const t = useTranslations();
   const router = useRouter();
+  const locale = useLocale();
   const [offset, setOffset]               = useState(0);
   const [flash, setFlash]                 = useState<"add" | "use" | null>(null);
   const [longPressMenu, setLongPressMenu] = useState(false);
@@ -173,7 +175,7 @@ function InventoryRow({ product, isLast }: { product: Product; isLast: boolean }
       await updateQty(prevQuantity(product.quantity), "use");
       setFlash("use"); setTimeout(() => setFlash(null), 600);
     } else if (!didSwipe.current) {
-      router.push(`/product/${product.id}`);
+      router.push(`/${locale}/product/${product.id}`);
     }
   };
 
@@ -197,7 +199,7 @@ function InventoryRow({ product, isLast }: { product: Product; isLast: boolean }
       {longPressMenu && (
         <LongPressMenu
           productName={product.name}
-          onEdit={() => { setLongPressMenu(false); router.push(`/product/${product.id}/edit`); }}
+          onEdit={() => { setLongPressMenu(false); router.push(`/${locale}/product/${product.id}/edit`); }}
           onDelete={async () => { setLongPressMenu(false); await deleteProduct(); }}
           onClose={() => setLongPressMenu(false)}
         />
@@ -207,11 +209,11 @@ function InventoryRow({ product, isLast }: { product: Product; isLast: boolean }
         {/* スワイプ背景 */}
         <div className="absolute inset-0 flex items-center pl-5 pointer-events-none select-none"
           style={{ background: "linear-gradient(135deg,#89c4e1,#b8a9e8)" }}>
-          <span className="text-white text-xs font-bold">＋ 補充</span>
+          <span className="text-white text-xs font-bold">＋ {t("common.restock")}</span>
         </div>
         <div className="absolute inset-0 flex items-center justify-end pr-5 pointer-events-none select-none"
           style={{ background: "linear-gradient(135deg,#b8a9e8,#f2524a)" }}>
-          <span className="text-white text-xs font-bold">使用 −</span>
+          <span className="text-white text-xs font-bold">{t("common.use")} −</span>
         </div>
 
         {/* 行本体 */}
@@ -234,7 +236,7 @@ function InventoryRow({ product, isLast }: { product: Product; isLast: boolean }
             onPointerDown={e => e.stopPropagation()}
             onClick={toggleFavorite}
             className="flex-shrink-0 flex items-center justify-center pl-4 pr-2 py-3"
-            aria-label={product.isFavorite ? "お気に入りを解除" : "お気に入りに追加"}
+            aria-label={product.isFavorite ? t("product.favoriteRemove") : t("product.favoriteAdd")}
           >
             {product.isFavorite ? (
               /* ON：グラデーション塗り */
@@ -261,14 +263,14 @@ function InventoryRow({ product, isLast }: { product: Product; isLast: boolean }
             {product.name}
           </span>
           <span className="text-[10px] flex-shrink-0 ml-2" style={{ color: "var(--text-muted)" }}>
-            {CATEGORY_LABELS[product.category]}
+            {t(`categories.${product.category}`)}
           </span>
           <span className="text-[11px] flex-shrink-0 ml-2 tabular-nums" style={{ color: "var(--text-muted)" }}>
-            最低{product.minStock}{product.unit}
+            {t("inventory.minimum", { quantity: product.minStock, unit: unitLabel(product.unit, t) })}
           </span>
           <span className="text-[15px] font-bold flex-shrink-0 ml-2 mr-4 tabular-nums" style={qtyStyle}>
             {product.quantity}
-            <span className="text-[11px] font-normal ml-0.5" style={{ color: "var(--text-muted)" }}>{product.unit}</span>
+            <span className="text-[11px] font-normal ml-0.5" style={{ color: "var(--text-muted)" }}>{unitLabel(product.unit, t)}</span>
           </span>
         </div>
       </div>
@@ -280,6 +282,7 @@ function InventoryRow({ product, isLast }: { product: Product; isLast: boolean }
 function LongPressMenu({
   productName, onEdit, onDelete, onClose,
 }: { productName: string; onEdit: () => void; onDelete: () => void; onClose: () => void; }) {
+  const t = useTranslations();
   return (
     <div className="modal-overlay flex items-end justify-center pb-10 px-4" onClick={onClose}>
       <div className="w-full max-w-sm modal-sheet" onClick={e => e.stopPropagation()}>
@@ -289,11 +292,11 @@ function LongPressMenu({
         <button onClick={onEdit} className="w-full flex items-center gap-3 px-5 py-4 text-left transition-colors active:bg-grad-soft"
           style={{ borderBottom: "0.5px solid var(--glass-border)" }}>
           <Pencil size={17} strokeWidth={1.8} style={{ color: "var(--text-muted)" }} />
-          <span className="text-[15px]" style={{ color: "var(--text-primary)" }}>編集</span>
+          <span className="text-[15px]" style={{ color: "var(--text-primary)" }}>{t("common.edit")}</span>
         </button>
         <button onClick={onDelete} className="w-full flex items-center gap-3 px-5 py-4 text-left active:opacity-70">
           <Trash2 size={17} strokeWidth={1.8} style={{ color: "#f2524a" }} />
-          <span className="text-[15px]" style={{ color: "#f2524a" }}>削除</span>
+          <span className="text-[15px]" style={{ color: "#f2524a" }}>{t("common.delete")}</span>
         </button>
       </div>
     </div>
@@ -302,11 +305,12 @@ function LongPressMenu({
 
 // ── Empty State ──
 function EmptyState({ hasQuery }: { hasQuery: boolean }) {
+  const t = useTranslations();
   return (
     <div className="list-group">
       <div className="flex justify-center items-center py-14">
         <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-          {hasQuery ? "該当する商品が見つかりません" : "商品が登録されていません"}
+          {hasQuery ? t("inventory.noResults") : t("inventory.empty")}
         </p>
       </div>
     </div>

@@ -1,21 +1,160 @@
 {
   "app": {
     "name": "homegds",
-    "tagline": "家庭用在庫管理"
+    "tagline": "家庭用在庫管理",
+    "description": "家庭の食材・日用品を手軽に管理するPWAアプリ"
   },
   "nav": {
-    "home":      "ホーム",
+    "home": "ホーム",
     "inventory": "在庫",
-    "history":   "履歴",
-    "settings":  "設定"
+    "history": "履歴",
+    "settings": "設定"
   },
   "settings": {
-    "title":        "設定",
-    "language":     "言語",
-    "languageJa":   "日本語",
+    "title": "設定",
+    "language": "言語",
+    "languageJa": "日本語",
     "languageZhTW": "繁體中文",
-    "darkMode":     "ダークモード",
+    "darkMode": "ダークモード",
     "darkModeNote": "（次回実装予定）",
-    "sectionApp":   "アプリ設定"
+    "sectionApp": "アプリ設定",
+    "data": "データ",
+    "export": "CSVエクスポート",
+    "import": "CSVインポート"
+  },
+  "common": {
+    "add": "追加",
+    "edit": "編集",
+    "delete": "削除",
+    "cancel": "キャンセル",
+    "close": "閉じる",
+    "back": "戻る",
+    "home": "ホームへ戻る",
+    "loading": "読み込み中…",
+    "saving": "保存中…",
+    "save": "保存する",
+    "saveChanges": "変更を保存",
+    "use": "使用",
+    "restock": "補充",
+    "showAll": "すべて見る",
+    "processing": "処理中…",
+    "mainNav": "メインナビゲーション"
+  },
+  "stock": {
+    "out": "在庫不足",
+    "low": "在庫が少ない"
+  },
+  "product": {
+    "add": "商品を追加",
+    "addAction": "商品を追加する",
+    "name": "商品名",
+    "category": "カテゴリ",
+    "quantity": "現在の在庫",
+    "unit": "単位",
+    "minStock": "最低在庫",
+    "favorite": "お気に入り",
+    "minStockHint": "この数を下回ると補充が必要と表示されます",
+    "namePlaceholder": "例：醤油、ティッシュ",
+    "notFound": "商品が見つかりません",
+    "detail": "商品詳細",
+    "invalidId": "無効なIDです",
+    "favoriteAdd": "お気に入りに追加",
+    "favoriteRemove": "お気に入りを解除",
+    "favorited": "登録済み",
+    "notFavorited": "未登録",
+    "deleteAction": "この商品を削除",
+    "deleteTitle": "商品を削除",
+    "deleteConfirm": "「{name}」を削除しますか？ この操作は取り消せません。"
+  },
+  "home": {
+    "empty": "補充が必要な商品はありません",
+    "emptyHint": "右上の「追加」から商品を登録すると、補充が必要なものがここに表示されます。"
+  },
+  "inventory": {
+    "search": "商品名で検索",
+    "clearSearch": "検索をクリア",
+    "filter": "フィルタ中：{label}",
+    "clearFilter": "解除",
+    "noResults": "該当する商品が見つかりません",
+    "empty": "商品が登録されていません",
+    "minimum": "最低{quantity}{unit}"
+  },
+  "history": {
+    "empty": "履歴がありません",
+    "latest": "最新 {count} 件",
+    "today": "今日",
+    "yesterday": "昨日"
+  },
+  "csv": {
+    "selectHint": "CSVファイルを選択してください。",
+    "columnsHint": "商品名・カテゴリ・数量・最低在庫・単位・お気に入りの列が必要です。",
+    "selectFile": "ファイルを選択",
+    "reading": "CSV読み込み中…",
+    "importing": "インポート中…",
+    "readFailed": "CSVを読み込めませんでした",
+    "retry": "別のファイルを選び直す",
+    "loaded": "{count}件の商品データを読み込みました",
+    "skippedErrors": "{count}件のエラー行はスキップされます",
+    "line": "{line}行目: {message}",
+    "more": "他 {count}件…",
+    "duplicates": "同名の商品が{count}件あります。1件ずつ処理方法を確認します。",
+    "importAction": "インポート",
+    "checkingDuplicates": "重複確認中…",
+    "exists": "「{name}」は既に登録されています",
+    "resolve": "この商品をどう処理しますか？",
+    "overwriteOne": "この商品だけ上書き",
+    "skipOne": "この商品だけスキップ",
+    "overwriteAll": "以降すべて上書き",
+    "skipAll": "以降すべてスキップ",
+    "done": "インポートが完了しました",
+    "added": "新規追加",
+    "overwritten": "上書き",
+    "skipped": "スキップ",
+    "errorsSkipped": "エラー（スキップ）",
+    "count": "{count}件",
+    "progress": "{current} / {total} 件",
+    "errors": {
+      "empty": "ファイルが空です。",
+      "header": "CSVのヘッダー形式が正しくありません。期待される列: {columns}",
+      "columns": "列数が不足しています（最低6列必要です）。",
+      "name": "商品名が空です。",
+      "category": "カテゴリ「{value}」は不正な値です（有効値: {allowed}）。",
+      "quantity": "数量「{value}」は不正な数値です。",
+      "minStock": "最低在庫「{value}」は不正な数値です。",
+      "unit": "単位「{value}」は不正な値です（有効値: {allowed}）。"
+    }
+  },
+  "validation": {
+    "nameRequired": "商品名を入力してください",
+    "nameMax": "商品名は100文字以内で入力してください",
+    "category": "カテゴリを選択してください",
+    "unit": "単位を選択してください",
+    "quantity": "数量を入力してください",
+    "minStock": "最低在庫を入力してください",
+    "range": "0から99999の範囲で入力してください"
+  },
+  "stats": {
+    "title": "統計",
+    "comingSoon": "統計機能は今後実装予定です"
+  },
+  "categories": {
+    "food": "食品",
+    "beverage": "飲料",
+    "daily": "日用品",
+    "medicine": "医薬品",
+    "other": "その他"
+  },
+  "units": {
+    "piece": "個",
+    "bottle": "本",
+    "bag": "袋",
+    "box": "箱",
+    "can": "缶",
+    "sheet": "枚",
+    "g": "g",
+    "kg": "kg",
+    "ml": "ml",
+    "L": "L",
+    "other": "その他"
   }
 }

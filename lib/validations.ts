@@ -1,18 +1,26 @@
 import { z } from "zod";
+import { UNITS } from "./constants";
 
-export const productSchema = z.object({
-  name: z.string().min(1, "商品名を入力してください").max(100),
-  category: z.enum(["food", "beverage", "daily", "medicine", "other"], {
-    required_error: "カテゴリを選択してください",
-  }),
-  quantity: z.coerce.number({ invalid_type_error: "数量を入力してください" })
-    .min(0).max(99999),
-  unit: z.enum(["個", "本", "袋", "箱", "缶", "枚", "g", "kg", "ml", "L", "その他"], {
-    required_error: "単位を選択してください",
-  }),
-  minStock: z.coerce.number({ invalid_type_error: "最低在庫を入力してください" })
-    .min(0).max(99999),
-  isFavorite: z.boolean().default(false),
-});
+type Translate = (key: string) => string;
 
-export type ProductFormValues = z.infer<typeof productSchema>;
+export function createProductSchema(t: Translate) {
+  const number = (key: string) => z.coerce.number({ invalid_type_error: t(key) })
+    .min(0, t("validation.range")).max(99999, t("validation.range"));
+  return z.object({
+    name: z.string().min(1, t("validation.nameRequired")).max(100, t("validation.nameMax")),
+    category: z.enum(["food", "beverage", "daily", "medicine", "other"], {
+      errorMap: () => ({ message: t("validation.category") }),
+    }),
+    quantity: number("validation.quantity"),
+    unit: z.enum(UNITS, { errorMap: () => ({ message: t("validation.unit") }) }),
+    minStock: number("validation.minStock"),
+    isFavorite: z.boolean().default(false),
+  });
+}
+
+export function createEditSchema(t: Translate) {
+  return createProductSchema(t).omit({ quantity: true });
+}
+
+export type ProductFormValues = z.infer<ReturnType<typeof createProductSchema>>;
+export type EditFormValues = z.infer<ReturnType<typeof createEditSchema>>;

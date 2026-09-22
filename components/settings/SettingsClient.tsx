@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { ChevronRight, Moon, Download, Upload } from "lucide-react";
 import { useTheme } from "@/components/providers/ThemeProvider";
 import { useLiveQuery } from "dexie-react-hooks";
@@ -16,27 +16,20 @@ const LANG_STORAGE_KEY = "homegds_locale";
 type Locale = "ja" | "zh-TW";
 
 export default function SettingsClient() {
-  const t          = useTranslations("settings");
+  const t          = useTranslations();
   const router     = useRouter();
   const pathname   = usePathname();
   const { dark, toggle } = useTheme();
 
-  const currentLocale = (pathname.match(/^\/(ja|zh-TW)/)?.[1] ?? "ja") as Locale;
-  const [locale, setLocale] = useState<Locale>(currentLocale);
+  const currentLocale = useLocale() as Locale;
   const [showImport, setShowImport] = useState(false);
 
   const products = useLiveQuery(() => getDb().products.toArray(), []) ?? [];
 
-  useEffect(() => {
-    const saved = localStorage.getItem(LANG_STORAGE_KEY) as Locale | null;
-    if (saved && saved !== currentLocale) setLocale(saved);
-  }, [currentLocale]);
-
   const handleLocaleChange = (next: Locale) => {
     if (next === currentLocale) return;
     localStorage.setItem(LANG_STORAGE_KEY, next);
-    setLocale(next);
-    router.push(pathname.replace(/^\/(ja|zh-TW)/, `/${next}`));
+    router.replace(pathname.replace(/^\/(ja|zh-TW)/, `/${next}`));
   };
 
   const handleExport = () => {
@@ -54,19 +47,19 @@ export default function SettingsClient() {
 
   return (
     <>
-      <Header title={t("title")} left={<BackButton />} />
+      <Header title={t("settings.title")} left={<BackButton />} />
       <main className="max-w-2xl mx-auto pb-24">
 
-        <p className="section-label">{t("sectionApp")}</p>
+        <p className="section-label">{t("settings.sectionApp")}</p>
 
         <div className="list-group">
 
           {/* 言語 */}
           <LanguageRow
-            label={t("language")}
-            currentLocale={locale}
-            labelJa={t("languageJa")}
-            labelZhTW={t("languageZhTW")}
+            label={t("settings.language")}
+            currentLocale={currentLocale}
+            labelJa={t("settings.languageJa")}
+            labelZhTW={t("settings.languageZhTW")}
             onChange={handleLocaleChange}
           />
 
@@ -74,11 +67,12 @@ export default function SettingsClient() {
           <div className="list-row justify-between">
             <div className="flex items-center gap-3">
               <Moon size={18} strokeWidth={1.8} style={{ color: "var(--text-muted)" }} />
-              <span className="text-[15px] text-primary">{t("darkMode")}</span>
+              <span className="text-[15px] text-primary">{t("settings.darkMode")}</span>
             </div>
             <button
               type="button"
               onClick={toggle}
+              aria-label={t("settings.darkMode")}
               aria-checked={dark}
               role="switch"
               className="toggle-track"
@@ -91,7 +85,7 @@ export default function SettingsClient() {
         </div>
 
         {/* セクション：データ */}
-        <p className="section-label">データ</p>
+        <p className="section-label">{t("settings.data")}</p>
 
         <div className="list-group">
 
@@ -105,7 +99,7 @@ export default function SettingsClient() {
           >
             <div className="flex items-center gap-3">
               <Download size={18} strokeWidth={1.8} style={{ color: "var(--text-muted)" }} />
-              <span className="text-[15px] text-primary">CSVエクスポート</span>
+              <span className="text-[15px] text-primary">{t("settings.export")}</span>
             </div>
             <ChevronRight size={15} style={{ color: "var(--text-muted)" }} />
           </button>
@@ -118,7 +112,7 @@ export default function SettingsClient() {
           >
             <div className="flex items-center gap-3">
               <Upload size={18} strokeWidth={1.8} style={{ color: "var(--text-muted)" }} />
-              <span className="text-[15px] text-primary">CSVインポート</span>
+              <span className="text-[15px] text-primary">{t("settings.import")}</span>
             </div>
             <ChevronRight size={15} style={{ color: "var(--text-muted)" }} />
           </button>

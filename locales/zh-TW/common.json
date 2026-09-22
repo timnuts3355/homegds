@@ -1,21 +1,160 @@
 {
   "app": {
     "name": "homegds",
-    "tagline": "家庭庫存管理"
+    "tagline": "家庭庫存管理",
+    "description": "輕鬆管理家中食材與日用品的 PWA 應用程式"
   },
   "nav": {
-    "home":      "主頁",
+    "home": "首頁",
     "inventory": "庫存",
-    "history":   "歷史",
-    "settings":  "設定"
+    "history": "紀錄",
+    "settings": "設定"
   },
   "settings": {
-    "title":        "設定",
-    "language":     "語言",
-    "languageJa":   "日本語",
+    "title": "設定",
+    "language": "語言",
+    "languageJa": "日本語",
     "languageZhTW": "繁體中文",
-    "darkMode":     "深色模式",
-    "darkModeNote": "（下次更新實裝）",
-    "sectionApp":   "應用程式設定"
+    "darkMode": "深色模式",
+    "darkModeNote": "（預計於下次更新推出）",
+    "sectionApp": "應用程式設定",
+    "data": "資料",
+    "export": "匯出 CSV",
+    "import": "匯入 CSV"
+  },
+  "common": {
+    "add": "新增",
+    "edit": "編輯",
+    "delete": "刪除",
+    "cancel": "取消",
+    "close": "關閉",
+    "back": "返回",
+    "home": "返回首頁",
+    "loading": "載入中…",
+    "saving": "儲存中…",
+    "save": "儲存",
+    "saveChanges": "儲存變更",
+    "use": "使用",
+    "restock": "補充",
+    "showAll": "查看全部",
+    "processing": "處理中…",
+    "mainNav": "主要導覽"
+  },
+  "stock": {
+    "out": "庫存不足",
+    "low": "庫存偏低"
+  },
+  "product": {
+    "add": "新增商品",
+    "addAction": "新增商品",
+    "name": "商品名稱",
+    "category": "分類",
+    "quantity": "目前庫存",
+    "unit": "單位",
+    "minStock": "最低庫存",
+    "favorite": "收藏",
+    "minStockHint": "低於此數量時，會顯示需要補充",
+    "namePlaceholder": "例如：醬油、衛生紙",
+    "notFound": "找不到商品",
+    "detail": "商品詳情",
+    "invalidId": "無效的商品 ID",
+    "favoriteAdd": "加入收藏",
+    "favoriteRemove": "取消收藏",
+    "favorited": "已收藏",
+    "notFavorited": "未收藏",
+    "deleteAction": "刪除此商品",
+    "deleteTitle": "刪除商品",
+    "deleteConfirm": "確定要刪除「{name}」嗎？此操作無法復原。"
+  },
+  "home": {
+    "empty": "目前沒有需要補充的商品",
+    "emptyHint": "從右上角「新增」登錄商品後，需要補充的商品會顯示在這裡。"
+  },
+  "inventory": {
+    "search": "搜尋商品名稱",
+    "clearSearch": "清除搜尋",
+    "filter": "篩選中：{label}",
+    "clearFilter": "清除",
+    "noResults": "找不到符合條件的商品",
+    "empty": "尚未新增商品",
+    "minimum": "最低 {quantity}{unit}"
+  },
+  "history": {
+    "empty": "尚無紀錄",
+    "latest": "最近 {count} 筆",
+    "today": "今天",
+    "yesterday": "昨天"
+  },
+  "csv": {
+    "selectHint": "請選擇 CSV 檔案。",
+    "columnsHint": "檔案沿用原有格式，必須包含以下日文欄名：商品名、カテゴリ、数量、最低在庫、単位、お気に入り。單位值也沿用原有格式。",
+    "selectFile": "選擇檔案",
+    "reading": "正在讀取 CSV…",
+    "importing": "正在匯入…",
+    "readFailed": "無法讀取 CSV",
+    "retry": "重新選擇檔案",
+    "loaded": "已讀取 {count} 筆商品資料",
+    "skippedErrors": "將略過 {count} 筆有錯誤的資料",
+    "line": "第 {line} 列：{message}",
+    "more": "另有 {count} 筆…",
+    "duplicates": "有 {count} 筆同名商品，將逐筆確認處理方式。",
+    "importAction": "匯入",
+    "checkingDuplicates": "正在檢查重複資料…",
+    "exists": "「{name}」已存在",
+    "resolve": "要如何處理此商品？",
+    "overwriteOne": "僅覆寫此商品",
+    "skipOne": "僅略過此商品",
+    "overwriteAll": "覆寫之後所有重複商品",
+    "skipAll": "略過之後所有重複商品",
+    "done": "匯入完成",
+    "added": "新增",
+    "overwritten": "覆寫",
+    "skipped": "略過",
+    "errorsSkipped": "錯誤（已略過）",
+    "count": "{count} 筆",
+    "progress": "{current} / {total} 筆",
+    "errors": {
+      "empty": "檔案是空的。",
+      "header": "CSV 欄名格式不正確。需要的欄名：{columns}",
+      "columns": "欄位不足（至少需要 6 欄）。",
+      "name": "商品名稱不能留空。",
+      "category": "分類「{value}」無效（可用值：{allowed}）。",
+      "quantity": "數量「{value}」不是有效的數值。",
+      "minStock": "最低庫存「{value}」不是有效的數值。",
+      "unit": "單位「{value}」無效（原有格式的可用值：{allowed}）。"
+    }
+  },
+  "validation": {
+    "nameRequired": "請輸入商品名稱",
+    "nameMax": "商品名稱不得超過 100 個字元",
+    "category": "請選擇分類",
+    "unit": "請選擇單位",
+    "quantity": "請輸入有效的數量",
+    "minStock": "請輸入有效的最低庫存",
+    "range": "請輸入 0 到 99999 之間的數值"
+  },
+  "stats": {
+    "title": "統計",
+    "comingSoon": "統計功能將於日後推出"
+  },
+  "categories": {
+    "food": "食品",
+    "beverage": "飲料",
+    "daily": "日用品",
+    "medicine": "藥品",
+    "other": "其他"
+  },
+  "units": {
+    "piece": "個",
+    "bottle": "支",
+    "bag": "袋",
+    "box": "箱",
+    "can": "罐",
+    "sheet": "張",
+    "g": "g",
+    "kg": "kg",
+    "ml": "ml",
+    "L": "L",
+    "other": "其他"
   }
 }

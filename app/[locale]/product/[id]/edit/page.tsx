@@ -1,4 +1,4 @@
-import { setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import ProductEditClient from "@/components/product/ProductEditClient";
 
 interface Props {
@@ -8,7 +8,8 @@ interface Props {
 export default async function ProductEditPage({ params }: Props) {
   const { locale, id } = await params;
   setRequestLocale(locale);
+  const t = await getTranslations({ locale, namespace: "product" });
   const numId = Number(id);
-  if (isNaN(numId)) return <p className="p-4 text-muted">無効なIDです</p>;
+  if (isNaN(numId)) return <p className="p-4 text-muted">{t("invalidId")}</p>;
   return <ProductEditClient id={numId} />;
 }

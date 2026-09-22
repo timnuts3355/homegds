@@ -1,5 +1,8 @@
+import type { Metadata } from "next";
+import { Suspense } from "react";
+import LocaleHistory from "@/components/layout/LocaleHistory";
 import { NextIntlClientProvider } from "next-intl";
-import { getMessages, setRequestLocale } from "next-intl/server";
+import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
@@ -10,6 +13,16 @@ import "../globals.css";
 interface LocaleLayoutProps {
   children: React.ReactNode;
   params: Promise<{ locale: string }>;
+}
+
+export async function generateMetadata({ params }: LocaleLayoutProps): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "app" });
+  return {
+    title: { absolute: `homegds - ${t("tagline")}`, template: "%s | homegds" },
+    description: t("description"),
+    manifest: locale === "zh-TW" ? "/manifest.zh-TW.json" : "/manifest.json",
+  };
 }
 
 export function generateStaticParams() {
@@ -35,7 +48,6 @@ export default async function LocaleLayout({
   return (
     <html lang={locale}>
       <head>
-        <link rel="manifest" href="/manifest.json" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="homegds" />
@@ -46,6 +58,7 @@ export default async function LocaleLayout({
         <ThemeProvider>
           {/* v4: locale を NextIntlClientProvider に明示的に渡す */}
           <NextIntlClientProvider locale={locale} messages={messages}>
+            <Suspense fallback={null}><LocaleHistory /></Suspense>
             <PageTransition>{children}</PageTransition>
             <TabBar />
           </NextIntlClientProvider>
