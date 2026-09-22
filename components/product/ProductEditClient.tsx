@@ -32,7 +32,7 @@ export default function ProductEditClient({ id }: Props) {
 
   useEffect(() => {
     if (!product) return;
-    reset({ name: product.name, category: product.category,
+    reset({ name: product.name, category: product.category, quantity: product.quantity,
       unit: product.unit, minStock: product.minStock, isFavorite: product.isFavorite });
   }, [product, reset]);
 
@@ -41,9 +41,12 @@ export default function ProductEditClient({ id }: Props) {
   const onSubmit = useCallback(async (values: EditFormValues) => {
     if (!product?.id) return;
     await getDb().products.update(product.id, { ...values, updatedAt: new Date() });
+    const quantityChanged = values.quantity !== product.quantity;
     await addHistory({
       productId: product.id, productName: values.name, action: "edit",
-      quantityBefore: null, quantityAfter: null, unit: values.unit,
+      quantityBefore: quantityChanged ? product.quantity : null,
+      quantityAfter: quantityChanged ? values.quantity : null,
+      unit: values.unit,
     });
     router.push(`/${locale}/product/${id}`);
   }, [product, router, locale, id]);
@@ -90,6 +93,10 @@ export default function ProductEditClient({ id }: Props) {
               <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
                 style={{ color: "var(--text-muted)" }} />
             </div>
+          </FormSection>
+          <FormSection label={t("product.quantity")} required error={errors.quantity?.message}>
+            <input {...register("quantity")} type="number" inputMode="decimal" min={0} step="any"
+              className="form-input" />
           </FormSection>
           <FormSection label={t("product.minStock")} required error={errors.minStock?.message}
             hint={t("product.minStockHint")}>

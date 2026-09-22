@@ -19,7 +19,7 @@ export function createProductSchema(t: Translate) {
 }
 
 export function createEditSchema(t: Translate) {
-  return createProductSchema(t).omit({ quantity: true });
+  return createProductSchema(t);
 }
 
 export type ProductFormValues = z.infer<ReturnType<typeof createProductSchema>>;
