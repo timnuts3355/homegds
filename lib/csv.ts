@@ -144,13 +144,13 @@ export function parseProductsCsv(
     }
 
     const quantity = Number(qtyRaw.trim());
-    if (Number.isNaN(quantity) || quantity < 0) {
+    if (qtyRaw.trim() === "" || !Number.isFinite(quantity) || quantity < 0) {
       result.errors.push({ line: lineNo, message: t("csv.errors.quantity", { value: qtyRaw }) });
       continue;
     }
 
     const minStock = Number(minRaw.trim());
-    if (Number.isNaN(minStock) || minStock < 0) {
+    if (minRaw.trim() === "" || !Number.isFinite(minStock) || minStock < 0) {
       result.errors.push({ line: lineNo, message: t("csv.errors.minStock", { value: minRaw }) });
       continue;
     }

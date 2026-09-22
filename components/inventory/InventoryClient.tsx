@@ -3,7 +3,7 @@
 import { useLocale, useTranslations } from "next-intl";
 import { unitLabel } from "@/lib/unit-label";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Search, X, Star, Pencil, Trash2 } from "lucide-react";
@@ -17,7 +17,7 @@ import BackButton from "@/components/layout/BackButton";
 const SWIPE_THRESHOLD = 60;
 const SWIPE_MAX       = 80;
 
-interface SwipeState { startX: number; currentX: number; active: boolean; }
+interface SwipeState { startY: number; startX: number; currentX: number; active: boolean; }
 
 type StockFilter = Extract<StockStatus, "out" | "low"> | null;
 
@@ -125,10 +125,14 @@ function InventoryRow({ product, isLast }: { product: Product; isLast: boolean }
   const [offset, setOffset]               = useState(0);
   const [flash, setFlash]                 = useState<"add" | "use" | null>(null);
   const [longPressMenu, setLongPressMenu] = useState(false);
-  const swipe     = useRef<SwipeState>({ startX: 0, currentX: 0, active: false });
+  const swipe     = useRef<SwipeState>({ startY: 0, startX: 0, currentX: 0, active: false });
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const didSwipe  = useRef(false);
   const status    = getStockStatus(product);
+
+  useEffect(() => () => {
+    if (holdTimer.current) clearTimeout(holdTimer.current);
+  }, []);
 
   const updateQty = useCallback(async (next: number, action: "use" | "restock") => {
     const before = product.quantity;
@@ -147,15 +151,30 @@ function InventoryRow({ product, isLast }: { product: Product; isLast: boolean }
     await getDb().products.update(product.id!, { isFavorite: !product.isFavorite, updatedAt: new Date() });
   }, [product]);
 
+  const onPointerCancel = () => {
+    swipe.current.active = false;
+    didSwipe.current = true;
+    setOffset(0);
+    if (holdTimer.current) { clearTimeout(holdTimer.current); holdTimer.current = null; }
+  };
+
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     didSwipe.current = false;
-    holdTimer.current = setTimeout(() => setLongPressMenu(true), 500);
-    swipe.current = { startX: e.clientX, currentX: e.clientX, active: true };
+    holdTimer.current = setTimeout(() => {
+      onPointerCancel();
+      setLongPressMenu(true);
+    }, 500);
+    swipe.current = { startY: e.clientY, startX: e.clientX, currentX: e.clientX, active: true };
     (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
   };
   const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!swipe.current.active) return;
     const dx = e.clientX - swipe.current.startX;
+    const dy = e.clientY - swipe.current.startY;
+    if (Math.abs(dy) > 8 && Math.abs(dy) > Math.abs(dx)) {
+      onPointerCancel();
+      return;
+    }
     if (Math.abs(dx) > 8) {
       didSwipe.current = true;
       if (holdTimer.current) { clearTimeout(holdTimer.current); holdTimer.current = null; }
@@ -224,13 +243,14 @@ function InventoryRow({ product, isLast }: { product: Product; isLast: boolean }
           style={{
             backgroundColor: flashBg,
             borderBottom: isLast ? "none" : "1px solid var(--border-soft)",
+            touchAction: "pan-y",
             transform: `translateX(${offset}px)`,
             transition: swipe.current.active ? "none" : "transform 0.2s ease",
           }}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
-          onPointerCancel={onPointerUp}
+          onPointerCancel={onPointerCancel}
         >
           {/* ★ お気に入りボタン（グラデーション） */}
           <button

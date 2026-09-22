@@ -98,6 +98,7 @@ function SwipeableStockRow({
         style={{
           borderBottom: isLast ? "none" : "1px solid var(--border-soft)",
           backgroundColor: flashBg,
+          touchAction: "pan-y",
           transform: `translateX(${offset}px)`,
           transition: offset === 0 ? "transform 0.2s ease" : "none",
         }}

@@ -31,6 +31,16 @@ export type DuplicateResolver = (
  * - 重複行は resolveDuplicate を呼んで都度（または一括）判定する。
  * - onProgress(current) は処理済み件数が増えるたびに呼ばれる。
  */
+export function countDuplicates(rows: readonly Pick<ParsedCsvRow, "name">[], existingNames: Iterable<string>): number {
+  const seen = new Set(existingNames);
+  let count = 0;
+  for (const row of rows) {
+    if (seen.has(row.name)) count++;
+    seen.add(row.name);
+  }
+  return count;
+}
+
 export async function importProducts(
   rows: ParsedCsvRow[],
   resolveDuplicate: DuplicateResolver,
@@ -45,7 +55,7 @@ export async function importProducts(
   // "以降すべて" が選ばれた後の自動適用先
   let bulkDecision: RowDecision | null = null;
   let duplicateIndex = 0;
-  const totalDuplicates = rows.filter((r) => existingByName.has(r.name)).length;
+  const totalDuplicates = countDuplicates(rows, existingByName.keys());
   let processedCount = 0;
 
   for (const row of rows) {
@@ -115,6 +125,7 @@ export async function importProducts(
         quantityAfter: row.quantity,
         unit: row.unit,
       });
+      existingByName.set(row.name, { ...row, id: id as number, createdAt: now, updatedAt: now });
       summary.added++;
     }
     processedCount++;

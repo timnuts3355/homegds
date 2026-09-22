@@ -15,12 +15,12 @@ import type { Product } from "@/types";
 const SWIPE_THRESHOLD = 60;
 const SWIPE_MAX       = 80;
 
-interface SwipeState { startX: number; currentX: number; active: boolean; }
+interface SwipeState { startY: number; startX: number; currentX: number; active: boolean; }
 
 export function useSwipeQuantity(product: Product, options?: { onTap?: () => void }) {
   const [offset, setOffset] = useState(0);
   const [flash, setFlash]   = useState<"add" | "use" | null>(null);
-  const swipe     = useRef<SwipeState>({ startX: 0, currentX: 0, active: false });
+  const swipe     = useRef<SwipeState>({ startY: 0, startX: 0, currentX: 0, active: false });
   const didSwipe  = useRef(false);
 
   const updateQty = useCallback(async (next: number, action: "use" | "restock") => {
@@ -32,9 +32,15 @@ export function useSwipeQuantity(product: Product, options?: { onTap?: () => voi
     });
   }, [product]);
 
+  const onPointerCancel = () => {
+    swipe.current.active = false;
+    didSwipe.current = true;
+    setOffset(0);
+  };
+
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     didSwipe.current = false;
-    swipe.current = { startX: e.clientX, currentX: e.clientX, active: true };
+    swipe.current = { startY: e.clientY, startX: e.clientX, currentX: e.clientX, active: true };
     (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
   };
 
@@ -42,6 +48,11 @@ export function useSwipeQuantity(product: Product, options?: { onTap?: () => voi
     if (!swipe.current.active) return;
     swipe.current.currentX = e.clientX;
     const dx = e.clientX - swipe.current.startX;
+    const dy = e.clientY - swipe.current.startY;
+    if (Math.abs(dy) > 8 && Math.abs(dy) > Math.abs(dx)) {
+      onPointerCancel();
+      return;
+    }
     if (Math.abs(dx) > 8) didSwipe.current = true;
     setOffset(Math.max(-SWIPE_MAX, Math.min(SWIPE_MAX, dx)));
   };
@@ -69,7 +80,7 @@ export function useSwipeQuantity(product: Product, options?: { onTap?: () => voi
       onPointerDown,
       onPointerMove,
       onPointerUp,
-      onPointerCancel: onPointerUp,
+      onPointerCancel,
     },
   };
 }

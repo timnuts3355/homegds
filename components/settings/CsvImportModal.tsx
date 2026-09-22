@@ -8,6 +8,7 @@ import { getDb } from "@/db";
 import { parseProductsCsv, type ParsedCsvRow, type CsvParseError } from "@/lib/csv";
 import {
   importProducts,
+  countDuplicates,
   type RowDecision,
   type ImportSummary,
 } from "@/lib/csv-import";
@@ -72,7 +73,7 @@ export default function CsvImportModal({ onClose }: Props) {
 
     const existing = await getDb().products.toArray();
     const existingNames = new Set(existing.map((p) => p.name));
-    const dupCount = result.rows.filter((r) => existingNames.has(r.name)).length;
+    const dupCount = countDuplicates(result.rows, existingNames);
     setDuplicateCount(dupCount);
 
     setProgress(null);
