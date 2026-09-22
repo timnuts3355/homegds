@@ -164,6 +164,8 @@ function InventoryRow({ product, isLast }: { product: Product; isLast: boolean }
     setOffset(Math.max(-SWIPE_MAX, Math.min(SWIPE_MAX, dx)));
   };
   const onPointerUp = async () => {
+    // Ignore releases from controls that did not start a row gesture.
+    if (!swipe.current.active) return;
     if (holdTimer.current) { clearTimeout(holdTimer.current); holdTimer.current = null; }
     swipe.current.active = false;
     const dx = swipe.current.currentX - swipe.current.startX;
@@ -234,7 +236,10 @@ function InventoryRow({ product, isLast }: { product: Product; isLast: boolean }
           <button
             type="button"
             onPointerDown={e => e.stopPropagation()}
-            onClick={toggleFavorite}
+            onPointerUp={e => e.stopPropagation()}
+            onPointerCancel={e => e.stopPropagation()}
+            onClick={e => { e.stopPropagation(); void toggleFavorite(); }}
+            aria-pressed={product.isFavorite}
             className="flex-shrink-0 flex items-center justify-center pl-4 pr-2 py-3"
             aria-label={product.isFavorite ? t("product.favoriteRemove") : t("product.favoriteAdd")}
           >
