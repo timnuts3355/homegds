@@ -1,9 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { ChevronRight, Moon, Download, Upload } from "lucide-react";
+import { ChevronRight, Moon, Download, Upload, PieChart } from "lucide-react";
 import { useTheme } from "@/components/providers/ThemeProvider";
 import { useLiveQuery } from "dexie-react-hooks";
 import { getDb } from "@/db";
@@ -88,6 +89,14 @@ export default function SettingsClient() {
         <p className="section-label">{t("settings.data")}</p>
 
         <div className="list-group">
+
+          <Link href={"/" + currentLocale + "/stats"} className="list-row justify-between">
+            <div className="flex items-center gap-3">
+              <PieChart size={18} strokeWidth={1.8} style={{ color: "var(--text-muted)" }} />
+              <span className="text-[15px] text-primary">{t("stats.title")}</span>
+            </div>
+            <ChevronRight size={15} style={{ color: "var(--text-muted)" }} />
+          </Link>
 
           {/* CSVエクスポート */}
           <button

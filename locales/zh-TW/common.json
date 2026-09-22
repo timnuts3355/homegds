@@ -135,7 +135,10 @@
   },
   "stats": {
     "title": "統計",
-    "comingSoon": "統計功能將於日後推出"
+    "byCategory": "各分類商品占比",
+    "note": "依已登錄的商品筆數計算，不是庫存數量。",
+    "empty": "新增商品後，即可查看圓餅圖。",
+    "count": "{count} 筆"
   },
   "categories": {
     "food": "食品",
