@@ -4,7 +4,10 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { ChevronRight, Moon, Download, Upload, PieChart } from "lucide-react";
+import { ChevronRight, Moon, Download, Upload, PieChart, Mail, LogOut } from "lucide-react";
+import { signOut } from "firebase/auth";
+import { firebaseAuth } from "@/lib/firebase/client";
+import { useAuth } from "@/lib/firebase/AuthProvider";
 import { useTheme } from "@/components/providers/ThemeProvider";
 import { useProducts } from "@/lib/repositories/products";
 import { productsToCsv, generateExportFilename } from "@/lib/csv";
@@ -22,6 +25,7 @@ export default function SettingsClient() {
   const router     = useRouter();
   const pathname   = usePathname();
   const { dark, toggle } = useTheme();
+  const { user } = useAuth();
 
   const currentLocale = useLocale() as Locale;
   const [showImport, setShowImport] = useState(false);
@@ -46,6 +50,11 @@ export default function SettingsClient() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  };
+
+  const handleLogout = async () => {
+    await signOut(firebaseAuth);
+    router.push(`/${currentLocale}/login`);
   };
 
   return (
@@ -129,6 +138,31 @@ export default function SettingsClient() {
           </button>
 
         </div>
+
+        {/* セクション：アカウント */}
+        {user && (
+          <>
+            <p className="section-label">{t("settings.account")}</p>
+            <div className="list-group">
+              <div className="list-row justify-between">
+                <div className="flex items-center gap-3 min-w-0">
+                  <Mail size={18} strokeWidth={1.8} style={{ color: "var(--text-muted)" }} />
+                  <span className="text-[13px] truncate" style={{ color: "var(--text-muted)" }}>{user.email}</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="list-row w-full justify-between text-left"
+              >
+                <div className="flex items-center gap-3">
+                  <LogOut size={18} strokeWidth={1.8} style={{ color: "#f2524a" }} />
+                  <span className="text-[15px]" style={{ color: "#f2524a" }}>{t("auth.logout")}</span>
+                </div>
+              </button>
+            </div>
+          </>
+        )}
       </main>
 
       {showImport && <CsvImportModal onClose={() => setShowImport(false)} />}

@@ -20,7 +20,17 @@
     "sectionApp": "アプリ設定",
     "data": "データ",
     "export": "CSVエクスポート",
-    "import": "CSVインポート"
+    "import": "CSVインポート",
+    "account": "アカウント"
+  },
+  "auth": {
+    "email": "メールアドレス",
+    "password": "パスワード",
+    "loginButton": "ログイン",
+    "loggingIn": "ログイン中…",
+    "loginError": "メールアドレスまたはパスワードが正しくありません",
+    "subtitle": "家庭の在庫を夫婦で共有します",
+    "logout": "ログアウト"
   },
   "common": {
     "add": "追加",

@@ -6,6 +6,8 @@ import { getMessages, getTranslations, setRequestLocale } from "next-intl/server
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
+import { AuthProvider } from "@/lib/firebase/AuthProvider";
+import AuthGate from "@/components/auth/AuthGate";
 import TabBar from "@/components/layout/TabBar";
 import PageTransition from "@/components/transition/PageTransition";
 import "../globals.css";
@@ -55,14 +57,18 @@ export default async function LocaleLayout({
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
       </head>
       <body>
-        <ThemeProvider>
-          {/* v4: locale を NextIntlClientProvider に明示的に渡す */}
-          <NextIntlClientProvider locale={locale} messages={messages}>
-            <Suspense fallback={null}><LocaleHistory /></Suspense>
-            <PageTransition>{children}</PageTransition>
-            <TabBar />
-          </NextIntlClientProvider>
-        </ThemeProvider>
+        <AuthProvider>
+          <ThemeProvider>
+            {/* v4: locale を NextIntlClientProvider に明示的に渡す */}
+            <NextIntlClientProvider locale={locale} messages={messages}>
+              <Suspense fallback={null}><LocaleHistory /></Suspense>
+              <AuthGate>
+                <PageTransition>{children}</PageTransition>
+                <TabBar />
+              </AuthGate>
+            </NextIntlClientProvider>
+          </ThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   );

@@ -23,7 +23,7 @@ const TAB_HREFS: Record<TabId, string> = {
   settings:  "/settings",
 };
 
-const HIDE_TABBAR_PATTERN = /^\/(add|product\/)/;
+const HIDE_TABBAR_PATTERN = /^\/(add|product\/|login)/;
 
 export default function TabBar() {
   const pathname     = usePathname();
