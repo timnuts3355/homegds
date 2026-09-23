@@ -14,6 +14,8 @@ import BackButton from "@/components/layout/BackButton";
 import CsvImportModal from "./CsvImportModal";
 
 const LANG_STORAGE_KEY = "homegds_locale";
+const LOCALE_COOKIE = "NEXT_LOCALE";
+const LOCALE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // 1年
 type Locale = "ja" | "zh-TW";
 
 export default function SettingsClient() {
@@ -30,6 +32,7 @@ export default function SettingsClient() {
   const handleLocaleChange = (next: Locale) => {
     if (next === currentLocale) return;
     localStorage.setItem(LANG_STORAGE_KEY, next);
+    document.cookie = `${LOCALE_COOKIE}=${next}; path=/; max-age=${LOCALE_COOKIE_MAX_AGE}; SameSite=Lax`;
     router.replace(pathname.replace(/^\/(ja|zh-TW)/, `/${next}`));
   };
 
