@@ -3,13 +3,15 @@
 import { useTranslations } from "next-intl";
 import { unitLabel } from "@/lib/unit-label";
 
+import { useCallback } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Star } from "lucide-react";
 import type { Product } from "@/types";
 import { HOME_SECTION_LIMIT } from "@/lib/constants";
 import { getLocalePrefix } from "@/lib/locale";
 import { useSwipeQuantity } from "@/hooks/useSwipeQuantity";
+import { updateProduct } from "@/lib/repositories/products";
 
 interface StockSectionProps {
   title:        string;
@@ -74,6 +76,10 @@ function SwipeableStockRow({
     onTap: () => router.push(`${getLocalePrefix(pathname)}/product/${product.id}`),
   });
 
+  const toggleFavorite = useCallback(async () => {
+    await updateProduct(product.id!, { isFavorite: !product.isFavorite });
+  }, [product]);
+
   const flashBg = flash === "add"
     ? "rgba(137,196,225,0.15)"
     : flash === "use"
@@ -104,6 +110,35 @@ function SwipeableStockRow({
         }}
         {...handlers}
       >
+        {/* ★ お気に入りボタン（スワイプ・タップ遷移とは独立させる） */}
+        <button
+          type="button"
+          onPointerDown={e => e.stopPropagation()}
+          onPointerMove={e => e.stopPropagation()}
+          onPointerUp={e => e.stopPropagation()}
+          onPointerCancel={e => e.stopPropagation()}
+          onClick={e => { e.stopPropagation(); void toggleFavorite(); }}
+          aria-pressed={product.isFavorite}
+          className="flex-shrink-0 flex items-center justify-center"
+          aria-label={product.isFavorite ? t("product.favoriteRemove") : t("product.favoriteAdd")}
+        >
+          {product.isFavorite ? (
+            <svg width="16" height="16" viewBox="0 0 24 24">
+              <defs>
+                <linearGradient id={`starGradHome-${product.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%"   stopColor="#f2524a" />
+                  <stop offset="55%"  stopColor="#b8a9e8" />
+                  <stop offset="100%" stopColor="#89c4e1" />
+                </linearGradient>
+              </defs>
+              <polygon fill={`url(#starGradHome-${product.id})`} stroke="none"
+                points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
+            </svg>
+          ) : (
+            <Star size={16} strokeWidth={1.8} style={{ color: "var(--border)" }} />
+          )}
+        </button>
+
         <span style={{ width: 6, height: 6, borderRadius: "50%", background: dotColor, flexShrink: 0 }} />
         <span className="flex-1 text-[15px] font-medium truncate" style={{ color: "var(--text-primary)" }}>
           {product.name}
