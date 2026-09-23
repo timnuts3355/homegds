@@ -1,0 +1,59 @@
+rules_version = '2';
+
+// ============================================================
+// HomeGDS Firestore Security Rules（Phase 1 設計案・未適用）
+//
+// 前提構成:
+//   households/{householdId}
+//   households/{householdId}/members/{userId}
+//   households/{householdId}/products/{productId}
+//   households/{householdId}/history/{historyId}
+//
+// 方針:
+//   - ログイン済みユーザーのみアクセス可
+//   - 自分が所属する household 配下のみ読み書き可
+//   - 他 household のデータは絶対に見えない
+//   - household 自体・members の作成/変更はクライアントから不可
+//     （Firebase Console / 管理者操作のみで行う想定）
+//   - history は追記のみ（改ざん防止のため update / delete 不可）
+// ============================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // households/{householdId}.memberIds に自分のUIDが含まれているか
+    function isHouseholdMember(householdId) {
+      return isSignedIn() &&
+        request.auth.uid in
+          get(/databases/$(database)/documents/households/$(householdId)).data.memberIds;
+    }
+
+    match /households/{householdId} {
+      allow read: if isHouseholdMember(householdId);
+      // household自体の作成・変更はクライアントから行わせない
+      allow write: if false;
+
+      match /members/{memberId} {
+        allow read: if isHouseholdMember(householdId);
+        // メンバー管理はクライアントから行わせない
+        allow write: if false;
+      }
+
+      match /products/{productId} {
+        allow read, write: if isHouseholdMember(householdId);
+      }
+
+      match /history/{historyId} {
+        allow read, create: if isHouseholdMember(householdId);
+        // 履歴は追記のみ。後からの書き換え・削除は許可しない
+        allow update, delete: if false;
+      }
+    }
+
+    // 上記以外のパスは全てデフォルト拒否
+  }
+}
