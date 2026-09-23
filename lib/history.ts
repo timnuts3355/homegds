@@ -1,22 +1,6 @@
-import type { HistoryAction, HistoryEntry } from "@/types";
-import { getDb } from "@/db";
+import type { HistoryAction } from "@/types";
 
-const MAX_HISTORY = 100;
-
-export async function addHistory(
-  entry: Omit<HistoryEntry, "id" | "createdAt">
-): Promise<void> {
-  const db  = getDb();
-  const now = new Date();
-  await db.transaction("rw", db.histories, async () => {
-    await db.histories.add({ ...entry, createdAt: now });
-    const count = await db.histories.count();
-    if (count > MAX_HISTORY) {
-      const oldest = await db.histories.orderBy("createdAt").limit(count - MAX_HISTORY).primaryKeys();
-      await db.histories.bulkDelete(oldest);
-    }
-  });
-}
+export { addHistory, useHistories } from "@/lib/repositories/history";
 
 export const ACTION_LABELS: Record<HistoryAction, string> = {
   add: "追加", use: "使用", restock: "補充", edit: "編集", delete: "削除",

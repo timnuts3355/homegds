@@ -2,10 +2,9 @@
 
 import { useLocale, useTranslations } from "next-intl";
 
-import { useLiveQuery } from "dexie-react-hooks";
 import Link from "next/link";
 import { Plus, Package } from "lucide-react";
-import { getDb } from "@/db";
+import { useProducts } from "@/lib/repositories/products";
 import { filterOut, filterLow } from "@/lib/stock";
 import Header from "@/components/layout/Header";
 import StockSection from "./StockSection";
@@ -13,7 +12,7 @@ import StockSection from "./StockSection";
 export default function HomeClient() {
   const t = useTranslations();
   const locale = useLocale();
-  const products    = useLiveQuery(() => getDb().products.toArray(), []) ?? [];
+  const products    = useProducts() ?? [];
   const outProducts = filterOut(products);
   const lowProducts = filterLow(products);
   const hasAny      = outProducts.length > 0 || lowProducts.length > 0;

@@ -3,8 +3,7 @@
 import { useTranslations } from "next-intl";
 import { unitLabel } from "@/lib/unit-label";
 
-import { useLiveQuery } from "dexie-react-hooks";
-import { getDb } from "@/db";
+import { useHistories } from "@/lib/repositories/history";
 import { ACTION_COLORS } from "@/lib/history";
 import type { HistoryEntry, HistoryAction } from "@/types";
 import Header from "@/components/layout/Header";
@@ -12,9 +11,7 @@ import BackButton from "@/components/layout/BackButton";
 
 export default function HistoryClient() {
   const t = useTranslations();
-  const histories = useLiveQuery(
-    () => getDb().histories.orderBy("createdAt").reverse().limit(100).toArray(), []
-  ) ?? [];
+  const histories = useHistories() ?? [];
 
   return (
     <>

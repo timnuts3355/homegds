@@ -5,12 +5,11 @@ import { unitLabel } from "@/lib/unit-label";
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useLiveQuery } from "dexie-react-hooks";
 import { ChevronDown, Trash2, Star } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createEditSchema, type EditFormValues } from "@/lib/validations";
-import { getDb } from "@/db";
+import { useProduct, updateProduct, deleteProduct } from "@/lib/repositories/products";
 import { addHistory } from "@/lib/history";
 import { CATEGORIES, UNITS } from "@/lib/constants";
 import Header from "@/components/layout/Header";
@@ -23,7 +22,7 @@ export default function ProductEditClient({ id }: Props) {
   const router  = useRouter();
   const locale = useLocale();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const product = useLiveQuery(async () => (await getDb().products.get(id)) ?? null, [id]);
+  const product = useProduct(id);
 
   const { register, handleSubmit, reset, watch, setValue,
     formState: { errors, isSubmitting, isDirty } } = useForm<EditFormValues>({
@@ -40,7 +39,7 @@ export default function ProductEditClient({ id }: Props) {
 
   const onSubmit = useCallback(async (values: EditFormValues) => {
     if (!product?.id) return;
-    await getDb().products.update(product.id, { ...values, updatedAt: new Date() });
+    await updateProduct(product.id, values);
     const quantityChanged = values.quantity !== product.quantity;
     await addHistory({
       productId: product.id, productName: values.name, action: "edit",
@@ -57,7 +56,7 @@ export default function ProductEditClient({ id }: Props) {
       productId: product.id, productName: product.name, action: "delete",
       quantityBefore: product.quantity, quantityAfter: null, unit: product.unit,
     });
-    await getDb().products.delete(product.id);
+    await deleteProduct(product.id);
     router.push(`/${locale}/inventory`);
   }, [product, router, locale]);
 

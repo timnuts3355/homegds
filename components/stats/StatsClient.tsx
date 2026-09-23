@@ -1,8 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useLiveQuery } from "dexie-react-hooks";
-import { getDb } from "@/db";
+import { useProducts } from "@/lib/repositories/products";
 import { CATEGORIES } from "@/lib/constants";
 import Header from "@/components/layout/Header";
 import BackButton from "@/components/layout/BackButton";
@@ -11,7 +10,7 @@ const COLORS = ["#f2524a", "#9b87e0", "#5baed4", "#45977a", "#d29b36"];
 
 export default function StatsClient() {
   const t = useTranslations();
-  const products = useLiveQuery(() => getDb().products.toArray(), []);
+  const products = useProducts();
   const total = products?.length ?? 0;
   let angle = 0;
   const categories = CATEGORIES.map((category, index) => {

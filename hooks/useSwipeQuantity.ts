@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { getDb } from "@/db";
+import { updateProduct } from "@/lib/repositories/products";
 import { addHistory } from "@/lib/history";
 import { nextQuantity, prevQuantity } from "@/lib/stock";
 import type { Product } from "@/types";
@@ -25,7 +25,7 @@ export function useSwipeQuantity(product: Product, options?: { onTap?: () => voi
 
   const updateQty = useCallback(async (next: number, action: "use" | "restock") => {
     const before = product.quantity;
-    await getDb().products.update(product.id!, { quantity: next, updatedAt: new Date() });
+    await updateProduct(product.id!, { quantity: next });
     await addHistory({
       productId: product.id!, productName: product.name,
       action, quantityBefore: before, quantityAfter: next, unit: product.unit,

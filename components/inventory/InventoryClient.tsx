@@ -5,9 +5,8 @@ import { unitLabel } from "@/lib/unit-label";
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { useLiveQuery } from "dexie-react-hooks";
 import { Search, X, Star, Pencil, Trash2 } from "lucide-react";
-import { getDb } from "@/db";
+import { useProducts, updateProduct, deleteProduct } from "@/lib/repositories/products";
 import { addHistory } from "@/lib/history";
 import { getStockStatus, sortInventory, nextQuantity, prevQuantity } from "@/lib/stock";
 import type { Product, StockStatus } from "@/types";
@@ -28,7 +27,7 @@ export default function InventoryClient({ filter = null }: InventoryClientProps)
   const router     = useRouter();
   const pathname   = usePathname();
   const [query, setQuery] = useState("");
-  const allProducts = useLiveQuery(() => getDb().products.toArray(), []) ?? [];
+  const allProducts = useProducts() ?? [];
 
   // 1. 在庫状態フィルタを先に適用
   const statusFiltered = filter
@@ -136,19 +135,19 @@ function InventoryRow({ product, isLast }: { product: Product; isLast: boolean }
 
   const updateQty = useCallback(async (next: number, action: "use" | "restock") => {
     const before = product.quantity;
-    await getDb().products.update(product.id!, { quantity: next, updatedAt: new Date() });
+    await updateProduct(product.id!, { quantity: next });
     await addHistory({ productId: product.id!, productName: product.name,
       action, quantityBefore: before, quantityAfter: next, unit: product.unit });
   }, [product]);
 
-  const deleteProduct = useCallback(async () => {
+  const removeProduct = useCallback(async () => {
     await addHistory({ productId: product.id!, productName: product.name, action: "delete",
       quantityBefore: product.quantity, quantityAfter: null, unit: product.unit });
-    await getDb().products.delete(product.id!);
+    await deleteProduct(product.id!);
   }, [product]);
 
   const toggleFavorite = useCallback(async () => {
-    await getDb().products.update(product.id!, { isFavorite: !product.isFavorite, updatedAt: new Date() });
+    await updateProduct(product.id!, { isFavorite: !product.isFavorite });
   }, [product]);
 
   const onPointerCancel = () => {
@@ -221,7 +220,7 @@ function InventoryRow({ product, isLast }: { product: Product; isLast: boolean }
         <LongPressMenu
           productName={product.name}
           onEdit={() => { setLongPressMenu(false); router.push(`/${locale}/product/${product.id}/edit`); }}
-          onDelete={async () => { setLongPressMenu(false); await deleteProduct(); }}
+          onDelete={async () => { setLongPressMenu(false); await removeProduct(); }}
           onClose={() => setLongPressMenu(false)}
         />
       )}

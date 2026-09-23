@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 
 import { useRef, useState } from "react";
 import { Upload, AlertCircle, CheckCircle2, X } from "lucide-react";
-import { getDb } from "@/db";
+import { getProducts } from "@/lib/repositories/products";
 import { parseProductsCsv, type ParsedCsvRow, type CsvParseError } from "@/lib/csv";
 import {
   importProducts,
@@ -71,7 +71,7 @@ export default function CsvImportModal({ onClose }: Props) {
     setParsedRows(result.rows);
     setParseErrors(result.errors);
 
-    const existing = await getDb().products.toArray();
+    const existing = await getProducts();
     const existingNames = new Set(existing.map((p) => p.name));
     const dupCount = countDuplicates(result.rows, existingNames);
     setDuplicateCount(dupCount);

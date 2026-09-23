@@ -6,9 +6,8 @@ import { unitLabel } from "@/lib/unit-label";
 import { useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { useLiveQuery } from "dexie-react-hooks";
 import { Pencil, Minus, Plus, Home as HomeIcon } from "lucide-react";
-import { getDb } from "@/db";
+import { useProduct, updateProduct } from "@/lib/repositories/products";
 import { addHistory } from "@/lib/history";
 import { getStockStatus, nextQuantity, prevQuantity } from "@/lib/stock";
 import { getLocalePrefix } from "@/lib/locale";
@@ -21,7 +20,7 @@ export default function ProductDetailClient({ id }: Props) {
   const t = useTranslations();
   const router   = useRouter();
   const pathname = usePathname();
-  const product  = useLiveQuery(async () => (await getDb().products.get(id)) ?? null, [id]);
+  const product  = useProduct(id);
 
   // 現在のlocale（ja / zh-TW）を維持したままホームへ戻るリンク
   const homeHref = getLocalePrefix(pathname) || "/";
@@ -36,14 +35,14 @@ export default function ProductDetailClient({ id }: Props) {
 
   const toggleFavorite = useCallback(async () => {
     if (!product?.id) return;
-    await getDb().products.update(product.id, { isFavorite: !product.isFavorite, updatedAt: new Date() });
+    await updateProduct(product.id, { isFavorite: !product.isFavorite });
   }, [product]);
 
   const handleUse = useCallback(async () => {
     if (!product?.id) return;
     const before = product.quantity;
     const after  = prevQuantity(before);
-    await getDb().products.update(product.id, { quantity: after, updatedAt: new Date() });
+    await updateProduct(product.id, { quantity: after });
     await addHistory({ productId: product.id, productName: product.name, action: "use",
       quantityBefore: before, quantityAfter: after, unit: product.unit });
   }, [product]);
@@ -52,7 +51,7 @@ export default function ProductDetailClient({ id }: Props) {
     if (!product?.id) return;
     const before = product.quantity;
     const after  = nextQuantity(before);
-    await getDb().products.update(product.id, { quantity: after, updatedAt: new Date() });
+    await updateProduct(product.id, { quantity: after });
     await addHistory({ productId: product.id, productName: product.name, action: "restock",
       quantityBefore: before, quantityAfter: after, unit: product.unit });
   }, [product]);

@@ -6,8 +6,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { ChevronRight, Moon, Download, Upload, PieChart } from "lucide-react";
 import { useTheme } from "@/components/providers/ThemeProvider";
-import { useLiveQuery } from "dexie-react-hooks";
-import { getDb } from "@/db";
+import { useProducts } from "@/lib/repositories/products";
 import { productsToCsv, generateExportFilename } from "@/lib/csv";
 import Header from "@/components/layout/Header";
 import BackButton from "@/components/layout/BackButton";
@@ -27,7 +26,7 @@ export default function SettingsClient() {
   const currentLocale = useLocale() as Locale;
   const [showImport, setShowImport] = useState(false);
 
-  const products = useLiveQuery(() => getDb().products.toArray(), []) ?? [];
+  const products = useProducts() ?? [];
 
   const handleLocaleChange = (next: Locale) => {
     if (next === currentLocale) return;

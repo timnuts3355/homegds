@@ -1,4 +1,4 @@
-import { getDb } from "@/db";
+import { getProducts, addProduct, updateProduct } from "@/lib/repositories/products";
 import { addHistory } from "@/lib/history";
 import type { ParsedCsvRow } from "./csv";
 
@@ -46,10 +46,9 @@ export async function importProducts(
   resolveDuplicate: DuplicateResolver,
   onProgress?: (current: number) => void
 ): Promise<ImportSummary> {
-  const db = getDb();
   const summary: ImportSummary = { added: 0, overwritten: 0, skipped: 0 };
 
-  const existing = await db.products.toArray();
+  const existing = await getProducts();
   const existingByName = new Map(existing.map((p) => [p.name, p]));
 
   // "以降すべて" が選ばれた後の自動適用先
@@ -89,13 +88,12 @@ export async function importProducts(
       }
 
       // overwrite
-      await db.products.update(match.id!, {
+      await updateProduct(match.id!, {
         category: row.category,
         quantity: row.quantity,
         minStock: row.minStock,
         unit: row.unit,
         isFavorite: row.isFavorite,
-        updatedAt: now,
       });
       await addHistory({
         productId: match.id!,
@@ -107,25 +105,23 @@ export async function importProducts(
       });
       summary.overwritten++;
     } else {
-      const id = await db.products.add({
+      const id = await addProduct({
         name: row.name,
         category: row.category,
         quantity: row.quantity,
         minStock: row.minStock,
         unit: row.unit,
         isFavorite: row.isFavorite,
-        createdAt: now,
-        updatedAt: now,
       });
       await addHistory({
-        productId: id as number,
+        productId: id,
         productName: row.name,
         action: "add",
         quantityBefore: null,
         quantityAfter: row.quantity,
         unit: row.unit,
       });
-      existingByName.set(row.name, { ...row, id: id as number, createdAt: now, updatedAt: now });
+      existingByName.set(row.name, { ...row, id, createdAt: now, updatedAt: now });
       summary.added++;
     }
     processedCount++;

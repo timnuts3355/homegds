@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ChevronDown } from "lucide-react";
-import { getDb } from "@/db";
+import { addProduct } from "@/lib/repositories/products";
 import { addHistory } from "@/lib/history";
 import { createProductSchema, type ProductFormValues } from "@/lib/validations";
 import { CATEGORIES, UNITS } from "@/lib/constants";
@@ -31,10 +31,9 @@ export default function AddProductForm() {
   });
 
   const onSubmit = async (values: ProductFormValues) => {
-    const now = new Date();
-    const id = await getDb().products.add({ ...values, createdAt: now, updatedAt: now });
+    const id = await addProduct(values);
     await addHistory({
-      productId: id as number, productName: values.name, action: "add",
+      productId: id, productName: values.name, action: "add",
       quantityBefore: null, quantityAfter: values.quantity, unit: values.unit,
     });
     router.push(`/${locale}`);
