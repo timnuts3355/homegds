@@ -57,6 +57,7 @@
   "product": {
     "add": "新增商品",
     "addAction": "新增商品",
+    "addFailed": "無法新增商品，請再試一次。",
     "name": "商品名稱",
     "category": "分類",
     "quantity": "目前庫存",

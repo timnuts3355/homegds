@@ -3,12 +3,13 @@
 import { useLocale, useTranslations } from "next-intl";
 import { unitLabel } from "@/lib/unit-label";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ChevronDown } from "lucide-react";
-import { addProduct } from "@/lib/repositories/products";
-import { addHistory } from "@/lib/history";
+import { addProduct } from "@/lib/repositories/firestore/products";
+import { addHistory } from "@/lib/repositories/firestore/history";
 import { createProductSchema, type ProductFormValues } from "@/lib/validations";
 import { CATEGORIES, UNITS } from "@/lib/constants";
 import BackButton from "@/components/layout/BackButton";
@@ -17,6 +18,7 @@ export default function AddProductForm() {
   const t = useTranslations();
   const router = useRouter();
   const locale = useLocale();
+  const [submitError, setSubmitError] = useState(false);
 
   const {
     register,
@@ -30,12 +32,27 @@ export default function AddProductForm() {
     },
   });
 
+  // 商品追加はFirestoreへ保存（createdAt / updatedAt はRepository側のserverTimestamp()）。
   const onSubmit = async (values: ProductFormValues) => {
-    const id = await addProduct(values);
-    await addHistory({
-      productId: id, productName: values.name, action: "add",
-      quantityBefore: null, quantityAfter: values.quantity, unit: values.unit,
-    });
+    setSubmitError(false);
+    let id: string;
+    try {
+      id = await addProduct(values);
+    } catch (err) {
+      // 商品の保存に失敗した場合はHomeへ遷移せず、フォーム上に失敗を表示する
+      console.error("[firestore] addProduct failed", err);
+      setSubmitError(true);
+      return;
+    }
+    try {
+      await addHistory({
+        productId: id, productName: values.name, action: "add",
+        quantityBefore: null, quantityAfter: values.quantity, unit: values.unit,
+      });
+    } catch (err) {
+      // 商品自体は保存済みのため、再送信による二重登録を避けてHomeへ進む
+      console.error("[firestore] addHistory failed", err);
+    }
     router.push(`/${locale}`);
   };
 
@@ -101,6 +118,11 @@ export default function AddProductForm() {
             borderTop: "0.5px solid var(--glass-border)",
           }}>
           <div className="max-w-2xl mx-auto">
+            {submitError && (
+              <p role="alert" className="text-xs text-center mb-2" style={{ color: "#f2524a" }}>
+                {t("product.addFailed")}
+              </p>
+            )}
             <button type="submit" disabled={isSubmitting}
               className="w-full bg-grad disabled:opacity-40 text-white font-semibold text-base py-3.5 rounded-ios-lg transition-opacity active:opacity-80">
               {isSubmitting ? t("common.saving") : t("common.save")}

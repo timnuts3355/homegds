@@ -57,6 +57,7 @@
   "product": {
     "add": "商品を追加",
     "addAction": "商品を追加する",
+    "addFailed": "商品を追加できませんでした。もう一度お試しください。",
     "name": "商品名",
     "category": "カテゴリ",
     "quantity": "現在の在庫",
