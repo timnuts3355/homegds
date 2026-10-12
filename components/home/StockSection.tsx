@@ -7,15 +7,16 @@ import { useCallback } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { ChevronRight, Star } from "lucide-react";
-import type { Product } from "@/types";
+import type { FirestoreProduct } from "@/lib/repositories/firestore/types";
 import { HOME_SECTION_LIMIT } from "@/lib/constants";
 import { getLocalePrefix } from "@/lib/locale";
-import { useSwipeQuantity } from "@/hooks/useSwipeQuantity";
-import { updateProduct } from "@/lib/repositories/products";
+import { useSwipeQuantity, type SwipeQuantityAction } from "@/hooks/useSwipeQuantity";
+import { updateProduct } from "@/lib/repositories/firestore/products";
+import { addHistory } from "@/lib/repositories/firestore/history";
 
 interface StockSectionProps {
   title:        string;
-  products:     Product[];
+  products:     FirestoreProduct[];
   accentColor:  string;   // バッジ・ドットの色
   dotColor:     string;
   showAllHref:  string;
@@ -67,17 +68,29 @@ export default function StockSection({
 // ── スワイプで数量変更できる行（右：補充 / 左：使用） ──
 function SwipeableStockRow({
   product, dotColor, isLast,
-}: { product: Product; dotColor: string; isLast: boolean }) {
+}: { product: FirestoreProduct; dotColor: string; isLast: boolean }) {
   const t = useTranslations();
   const router   = useRouter();
   const pathname = usePathname();
 
+  // 数量変更はFirestoreへ書き込み、履歴もFirestore版addHistoryで記録する
+  // （actorUserId / actorDisplayName / createdAt はaddHistory側で付与）。
+  const changeQuantity = useCallback(async (next: number, action: SwipeQuantityAction) => {
+    const before = product.quantity;
+    await updateProduct(product.id, { quantity: next });
+    await addHistory({
+      productId: product.id, productName: product.name,
+      action, quantityBefore: before, quantityAfter: next, unit: product.unit,
+    });
+  }, [product]);
+
   const { offset, flash, handlers } = useSwipeQuantity(product, {
+    onChangeQuantity: changeQuantity,
     onTap: () => router.push(`${getLocalePrefix(pathname)}/product/${product.id}`),
   });
 
   const toggleFavorite = useCallback(async () => {
-    await updateProduct(product.id!, { isFavorite: !product.isFavorite });
+    await updateProduct(product.id, { isFavorite: !product.isFavorite });
   }, [product]);
 
   const flashBg = flash === "add"

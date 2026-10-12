@@ -4,7 +4,7 @@ import { useLocale, useTranslations } from "next-intl";
 
 import Link from "next/link";
 import { Plus, Package } from "lucide-react";
-import { useProducts } from "@/lib/repositories/products";
+import { useFirestoreProducts } from "@/lib/repositories/firestore/products";
 import { filterOut, filterLow } from "@/lib/stock";
 import Header from "@/components/layout/Header";
 import StockSection from "./StockSection";
@@ -12,7 +12,10 @@ import StockSection from "./StockSection";
 export default function HomeClient() {
   const t = useTranslations();
   const locale = useLocale();
-  const products    = useProducts() ?? [];
+  // Home（読み取り・お気に入り・スワイプ数量変更）はFirestoreへ切替済み。
+  // Inventory等の他画面は引き続きDexie。
+  const { products: firestoreProducts, error } = useFirestoreProducts();
+  const products    = firestoreProducts ?? [];
   const outProducts = filterOut(products);
   const lowProducts = filterLow(products);
   const hasAny      = outProducts.length > 0 || lowProducts.length > 0;
@@ -34,7 +37,11 @@ export default function HomeClient() {
       />
 
       <main className="max-w-2xl mx-auto pt-4 pb-24" style={{ backgroundColor: "var(--bg)" }}>
-        {!hasAny ? <EmptyState /> : (
+        {error && firestoreProducts === undefined ? (
+          <p role="alert" className="text-center mt-20 px-8 text-sm" style={{ color: "var(--text-muted)" }}>
+            {t("home.loadFailed")}
+          </p>
+        ) : !hasAny ? <EmptyState /> : (
           <>
             <StockSection
               title={t("stock.out")}

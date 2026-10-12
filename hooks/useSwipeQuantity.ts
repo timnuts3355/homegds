@@ -1,15 +1,13 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
-import { updateProduct } from "@/lib/repositories/products";
-import { addHistory } from "@/lib/history";
+import { useRef, useState } from "react";
 import { nextQuantity, prevQuantity } from "@/lib/stock";
-import type { Product } from "@/types";
 
 // ============================================================
 // 横スワイプによる数量変更（補充 / 使用）の共通フック
-// Inventory と同じ数量ステップ（nextQuantity / prevQuantity）・
-// 履歴記録（addHistory）ルールをそのまま利用する。
+// Inventory と同じ数量ステップ（nextQuantity / prevQuantity）を利用する。
+// 保存先（Dexie / Firestore）に依存しないよう、数量の書き込みと履歴記録は
+// 呼び出し側が onChangeQuantity として渡す（現在はHomeのみFirestore版を渡す）。
 // ============================================================
 
 const SWIPE_THRESHOLD = 60;
@@ -17,20 +15,18 @@ const SWIPE_MAX       = 80;
 
 interface SwipeState { startY: number; startX: number; currentX: number; active: boolean; }
 
-export function useSwipeQuantity(product: Product, options?: { onTap?: () => void }) {
+export type SwipeQuantityAction = "use" | "restock";
+
+interface SwipeQuantityOptions {
+  onChangeQuantity: (next: number, action: SwipeQuantityAction) => Promise<void>;
+  onTap?: () => void;
+}
+
+export function useSwipeQuantity(product: { quantity: number }, options: SwipeQuantityOptions) {
   const [offset, setOffset] = useState(0);
   const [flash, setFlash]   = useState<"add" | "use" | null>(null);
   const swipe     = useRef<SwipeState>({ startY: 0, startX: 0, currentX: 0, active: false });
   const didSwipe  = useRef(false);
-
-  const updateQty = useCallback(async (next: number, action: "use" | "restock") => {
-    const before = product.quantity;
-    await updateProduct(product.id!, { quantity: next });
-    await addHistory({
-      productId: product.id!, productName: product.name,
-      action, quantityBefore: before, quantityAfter: next, unit: product.unit,
-    });
-  }, [product]);
 
   const onPointerCancel = () => {
     swipe.current.active = false;
@@ -63,13 +59,13 @@ export function useSwipeQuantity(product: Product, options?: { onTap?: () => voi
     const dx = swipe.current.currentX - swipe.current.startX;
     setOffset(0);
     if (dx > SWIPE_THRESHOLD) {
-      await updateQty(nextQuantity(product.quantity), "restock");
+      await options.onChangeQuantity(nextQuantity(product.quantity), "restock");
       setFlash("add"); setTimeout(() => setFlash(null), 600);
     } else if (dx < -SWIPE_THRESHOLD) {
-      await updateQty(prevQuantity(product.quantity), "use");
+      await options.onChangeQuantity(prevQuantity(product.quantity), "use");
       setFlash("use"); setTimeout(() => setFlash(null), 600);
     } else if (!didSwipe.current) {
-      options?.onTap?.();
+      options.onTap?.();
     }
   };
 

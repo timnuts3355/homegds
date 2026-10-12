@@ -1,7 +1,10 @@
 import type { Product, StockStatus } from "@/types";
 import { LOW_STOCK_RATIO } from "./constants";
 
-export function getStockStatus(p: Product): StockStatus {
+/** 在庫判定に必要なフィールドのみ（Dexie版Product・FirestoreProductの両方を受け付ける） */
+type StockFields = Pick<Product, "quantity" | "minStock">;
+
+export function getStockStatus(p: StockFields): StockStatus {
   if (p.quantity < p.minStock) return "out";
   if (p.quantity < p.minStock * LOW_STOCK_RATIO) return "low";
   return "ok";
@@ -27,11 +30,11 @@ export function sortInventory(products: Product[]): Product[] {
   });
 }
 
-export function filterOut(products: Product[]): Product[] {
+export function filterOut<T extends StockFields>(products: T[]): T[] {
   return products.filter((p) => getStockStatus(p) === "out");
 }
 
-export function filterLow(products: Product[]): Product[] {
+export function filterLow<T extends StockFields>(products: T[]): T[] {
   return products.filter((p) => getStockStatus(p) === "low");
 }
 
