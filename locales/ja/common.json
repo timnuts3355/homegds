@@ -66,6 +66,7 @@
     "minStockHint": "この数を下回ると補充が必要と表示されます",
     "namePlaceholder": "例：醤油、ティッシュ",
     "notFound": "商品が見つかりません",
+    "loadFailed": "商品データを読み込めませんでした。",
     "detail": "商品詳細",
     "invalidId": "無効なIDです",
     "favoriteAdd": "お気に入りに追加",

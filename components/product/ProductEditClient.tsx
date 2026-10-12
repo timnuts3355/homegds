@@ -9,8 +9,8 @@ import { ChevronDown, Trash2, Star } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createEditSchema, type EditFormValues } from "@/lib/validations";
-import { useProduct, updateProduct, deleteProduct } from "@/lib/repositories/products";
-import { addHistory } from "@/lib/history";
+import { useFirestoreProduct, updateProduct, deleteProduct } from "@/lib/repositories/firestore/products";
+import { addHistory } from "@/lib/repositories/firestore/history";
 import { CATEGORIES, UNITS } from "@/lib/constants";
 import Header from "@/components/layout/Header";
 import BackButton from "@/components/layout/BackButton";
@@ -22,7 +22,9 @@ export default function ProductEditClient({ id }: Props) {
   const router  = useRouter();
   const locale = useLocale();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const product = useProduct(id);
+  // ProductEditはFirestoreへ切替済み（Inventoryは引き続きDexie）。
+  // product: undefined=読み込み中 / null=該当IDの商品なし、error=通信・権限エラー
+  const { product, error } = useFirestoreProduct(id);
 
   const { register, handleSubmit, reset, watch, setValue,
     formState: { errors, isSubmitting, isDirty } } = useForm<EditFormValues>({
@@ -38,7 +40,7 @@ export default function ProductEditClient({ id }: Props) {
   const isFavorite = watch("isFavorite");
 
   const onSubmit = useCallback(async (values: EditFormValues) => {
-    if (!product?.id) return;
+    if (!product) return;
     await updateProduct(product.id, values);
     const quantityChanged = values.quantity !== product.quantity;
     await addHistory({
@@ -51,7 +53,9 @@ export default function ProductEditClient({ id }: Props) {
   }, [product, router, locale, id]);
 
   const handleDelete = useCallback(async () => {
-    if (!product?.id) return;
+    if (!product) return;
+    // historyはRules上create可能・商品は削除後に読めなくなるため、
+    // delete履歴を先に記録してから商品を削除する。
     await addHistory({
       productId: product.id, productName: product.name, action: "delete",
       quantityBefore: product.quantity, quantityAfter: null, unit: product.unit,
@@ -60,6 +64,9 @@ export default function ProductEditClient({ id }: Props) {
     router.push(`/${locale}/inventory`);
   }, [product, router, locale]);
 
+  if (error && product === undefined) return (
+    <><Header title={t("common.edit")} left={<BackButton />} /><div className="flex justify-center pt-20"><p role="alert" className="text-sm" style={{ color: "var(--text-muted)" }}>{t("product.loadFailed")}</p></div></>
+  );
   if (product === undefined) return (
     <><Header title="" left={<BackButton />} /><div className="flex justify-center pt-20"><p className="text-sm" style={{ color: "var(--text-muted)" }}>{t("common.loading")}</p></div></>
   );

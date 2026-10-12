@@ -7,8 +7,8 @@ import { useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { Pencil, Minus, Plus, Home as HomeIcon } from "lucide-react";
-import { useProduct, updateProduct } from "@/lib/repositories/products";
-import { addHistory } from "@/lib/history";
+import { useFirestoreProduct, updateProduct } from "@/lib/repositories/firestore/products";
+import { addHistory } from "@/lib/repositories/firestore/history";
 import { getStockStatus, nextQuantity, prevQuantity } from "@/lib/stock";
 import { getLocalePrefix } from "@/lib/locale";
 import Header from "@/components/layout/Header";
@@ -20,7 +20,9 @@ export default function ProductDetailClient({ id }: Props) {
   const t = useTranslations();
   const router   = useRouter();
   const pathname = usePathname();
-  const product  = useProduct(id);
+  // ProductDetailはFirestoreへ切替済み（Inventoryは引き続きDexie）。
+  // product: undefined=読み込み中 / null=該当IDの商品なし、error=通信・権限エラー
+  const { product, error } = useFirestoreProduct(id);
 
   // 現在のlocale（ja / zh-TW）を維持したままホームへ戻るリンク
   const homeHref = getLocalePrefix(pathname) || "/";
@@ -34,12 +36,12 @@ export default function ProductDetailClient({ id }: Props) {
   );
 
   const toggleFavorite = useCallback(async () => {
-    if (!product?.id) return;
+    if (!product) return;
     await updateProduct(product.id, { isFavorite: !product.isFavorite });
   }, [product]);
 
   const handleUse = useCallback(async () => {
-    if (!product?.id) return;
+    if (!product) return;
     const before = product.quantity;
     const after  = prevQuantity(before);
     await updateProduct(product.id, { quantity: after });
@@ -48,7 +50,7 @@ export default function ProductDetailClient({ id }: Props) {
   }, [product]);
 
   const handleAdd = useCallback(async () => {
-    if (!product?.id) return;
+    if (!product) return;
     const before = product.quantity;
     const after  = nextQuantity(before);
     await updateProduct(product.id, { quantity: after });
@@ -56,6 +58,9 @@ export default function ProductDetailClient({ id }: Props) {
       quantityBefore: before, quantityAfter: after, unit: product.unit });
   }, [product]);
 
+  if (error && product === undefined) return (
+    <><Header title={t("product.detail")} left={headerLeft} /><div className="flex justify-center pt-20"><p role="alert" className="text-sm" style={{ color: "var(--text-muted)" }}>{t("product.loadFailed")}</p></div></>
+  );
   if (product === undefined) return (
     <><Header title="" left={headerLeft} /><div className="flex justify-center pt-20"><p className="text-sm" style={{ color: "var(--text-muted)" }}>{t("common.loading")}</p></div></>
   );

@@ -119,8 +119,17 @@ export function useFirestoreProduct(id: string): {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // URL由来の不正なid（空文字・"/"を含む等）はdoc()が例外を投げるため、
+    // クラッシュさせず「該当商品なし」として扱う。
+    let ref;
+    try {
+      ref = doc(firestore, PRODUCTS_PATH, id);
+    } catch {
+      setProduct(null);
+      return;
+    }
     const unsubscribe: Unsubscribe = onSnapshot(
-      doc(firestore, PRODUCTS_PATH, id),
+      ref,
       (snap) => {
         setError(null);
         setProduct(snap.exists() ? toFirestoreProduct(snap) : null);

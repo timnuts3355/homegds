@@ -66,6 +66,7 @@
     "minStockHint": "低於此數量時，會顯示需要補充",
     "namePlaceholder": "例如：醬油、衛生紙",
     "notFound": "找不到商品",
+    "loadFailed": "無法讀取商品資料。",
     "detail": "商品詳情",
     "invalidId": "無效的商品 ID",
     "favoriteAdd": "加入收藏",
