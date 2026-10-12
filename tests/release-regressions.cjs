@@ -1,38 +1,57 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
-// Uses a small hook/DB harness to exercise real handlers without adding dependencies.
+// Uses a small hook/Firestore-repository harness to exercise real handlers without adding dependencies.
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const assert = require('node:assert/strict');
 const root = process.argv[2] || path.resolve(__dirname, '..');
 const ts = require(path.join(root, 'node_modules/typescript'));
-const product = { id: 1, name: 'QA', category: 'food', quantity: 1, minStock: 2, unit: '個', isFavorite: false };
+// Firestore document IDs are strings; createdAt/updatedAt come from serverTimestamp().
+const product = { id: 'qa-doc-1', name: 'QA', category: 'food', quantity: 1, minStock: 2, unit: '個', isFavorite: false, createdAt: null, updatedAt: null };
 
 function harness() {
-  const updates = [], histories = [], routes = [], timers = new Map(), states = [];
+  const updates = [], updateIds = [], histories = [], routes = [], timers = new Map(), states = [];
   let nextTimer = 0;
   const products = [{ ...product }];
-  const db = { products: {
-    toArray: async () => products.map(p => ({ ...p })),
-    update: async (id, value) => { updates.push(value); Object.assign(products.find(p => p.id === id), value); },
-    add: async value => { const id = products.length + 1; products.push({ ...value, id }); return id; },
-  } };
+  // In-memory stand-in for lib/repositories/firestore/products.ts (same exported API).
+  const firestoreProducts = {
+    useFirestoreProducts: () => ({ products: products.map(p => ({ ...p })), error: null }),
+    useFirestoreProduct: id => ({ product: products.find(p => p.id === id) ?? null, error: null }),
+    getProducts: async () => products.map(p => ({ ...p })),
+    addProduct: async value => {
+      const id = 'doc-' + (products.length + 1);
+      products.push({ ...value, id, createdAt: null, updatedAt: null });
+      return id;
+    },
+    updateProduct: async (id, value) => {
+      const target = products.find(p => p.id === id);
+      if (!target) throw new Error('No product with id ' + id);
+      updates.push(value); updateIds.push(id); Object.assign(target, value);
+    },
+    deleteProduct: async id => { const i = products.findIndex(p => p.id === id); if (i >= 0) products.splice(i, 1); },
+  };
+  // In-memory stand-in for lib/repositories/firestore/history.ts.
+  const firestoreHistory = {
+    addHistory: async value => { histories.push(value); },
+    useFirestoreHistories: () => ({ histories: [], error: null }),
+  };
   const jsx = (type, props) => ({ type, props });
   const mocks = {
     react: { useCallback: f => f, useRef: current => ({ current }), useState: value => [value, v => states.push(v)], useEffect: () => {} },
     'react/jsx-runtime': { jsx, jsxs: jsx, Fragment: 'fragment' },
     'next/navigation': { useRouter: () => ({ push: url => routes.push(url) }), usePathname: () => '/ja/inventory' },
+    'next/link': { default: 'a' },
     'next-intl': { useLocale: () => 'ja', useTranslations: () => key => key },
-    'dexie-react-hooks': { useLiveQuery: () => [] },
     'lucide-react': {},
-    '@/db': { getDb: () => db },
-    '@/lib/history': { addHistory: async value => histories.push(value) },
+    '@/lib/repositories/firestore/products': firestoreProducts,
+    '@/lib/repositories/firestore/history': firestoreHistory,
     '@/components/layout/Header': { default: 'header' },
     '@/components/layout/BackButton': { default: 'button' },
   };
   function load(file) {
     let source = fs.readFileSync(path.join(root, file), 'utf8');
     if (file.endsWith('InventoryClient.tsx')) source += '\nexport { InventoryRow };';
+    if (file.endsWith('StockSection.tsx')) source += '\nexport { SwipeableStockRow };';
     const code = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2020 } }).outputText;
     const module = { exports: {} };
     const requireMock = id => {
@@ -55,8 +74,9 @@ function harness() {
     return null;
   }
   const row = () => find(load('components/inventory/InventoryClient.tsx').InventoryRow({ product, isLast: true }), n => !!n.props?.onPointerMove);
-  const home = () => load('hooks/useSwipeQuantity.ts').useSwipeQuantity(product, { onTap: () => routes.push('detail') }).handlers;
-  return { load, row, home, products, updates, histories, routes, timers, states };
+  // Home row = StockSection's SwipeableStockRow (useSwipeQuantity + Firestore onChangeQuantity wiring).
+  const home = () => find(load('components/home/StockSection.tsx').SwipeableStockRow({ product, dotColor: '', isLast: true }), n => !!n.props?.onPointerMove).props;
+  return { load, row, home, products, updates, updateIds, histories, routes, timers, states };
 }
 const event = (x=0, y=0) => ({ clientX:x, clientY:y, pointerId:1, button:0, isPrimary:true, currentTarget:{ setPointerCapture() {} } });
 const tests=[];
@@ -76,7 +96,8 @@ for (const kind of ['row', 'home']) {
   const h=harness(), handlers=kind==='row'?h.row().props:h.home();
   handlers.onPointerDown(event());handlers.onPointerMove(event(90));await handlers.onPointerUp(event(90));
   assert.equal(h.updates.length,1);assert.equal(h.updates[0].quantity,2);assert.equal(h.histories.length,1);assert.equal(h.routes.length,0);
-  handlers.onPointerDown(event());await handlers.onPointerUp(event());assert.equal(h.routes.length,1);
+  assert.equal(h.updateIds[0],'qa-doc-1');assert.equal(h.histories[0].productId,'qa-doc-1');assert.equal(h.histories[0].action,'restock');
+  handlers.onPointerDown(event());await handlers.onPointerUp(event());assert.equal(h.routes.length,1);assert.equal(h.routes[0],'/ja/product/qa-doc-1');
  });
 }
 test('inventory: long press opens menu without navigating on release', async () => {

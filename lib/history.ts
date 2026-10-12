@@ -1,6 +1,7 @@
 import type { HistoryAction } from "@/types";
 
-export { addHistory, useHistories } from "@/lib/repositories/history";
+// 履歴の読み書きは lib/repositories/firestore/history.ts を使用する。
+// このファイルはDBに依存しない表示用の定数のみを持つ。
 
 export const ACTION_LABELS: Record<HistoryAction, string> = {
   add: "追加", use: "使用", restock: "補充", edit: "編集", delete: "削除",

@@ -10,10 +10,10 @@ import { HOUSEHOLD_ID } from "./household";
 import type { FirestoreProduct, FirestoreProductInput, FirestoreProductPatch } from "./types";
 
 // ============================================================
-// products の Firestore版リポジトリ（Phase 3）。
+// products リポジトリ（Firestore）。
 //
-// 既存の lib/repositories/products.ts（Dexie版）とは完全に独立しており、
-// この時点ではどのUIコンポーネントからも呼ばれていない。
+// 商品データの正データ。Home / Inventory / ProductDetail / ProductEdit /
+// 商品追加 / Stats / Settings（CSV入出力）はすべてこのファイル経由で読み書きする。
 //
 // パス: households/{HOUSEHOLD_ID}/products/{productId}
 // Security Rules（firestore.rules）:
@@ -79,11 +79,10 @@ export async function deleteProduct(id: string): Promise<void> {
 
 /**
  * onSnapshotによるリアルタイム購読（一覧）。
- * 夫が数量変更 → 妻の画面にも自動反映、という用途を想定。
+ * 夫が数量変更 → 妻の画面にも自動反映、という用途。
  *
  * 読み取り専用フックのため、Firestoreが利用できない場合でも
  * 例外を投げずerrorを返すだけに留め、UIをクラッシュさせない。
- * Phase 3時点ではまだどのコンポーネントからも呼ばれていない。
  */
 export function useFirestoreProducts(): {
   products: FirestoreProduct[] | undefined;

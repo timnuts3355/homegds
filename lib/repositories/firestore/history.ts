@@ -10,7 +10,7 @@ import { HOUSEHOLD_ID } from "./household";
 import type { FirestoreHistoryEntry } from "./types";
 
 // ============================================================
-// history の Firestore版リポジトリ（Phase 3）。
+// history リポジトリ（Firestore）。履歴の正データ。
 //
 // パス: households/{HOUSEHOLD_ID}/history/{historyId}
 // Security Rules（firestore.rules）:
@@ -20,8 +20,8 @@ import type { FirestoreHistoryEntry } from "./types";
 //   （Rules側で拒否されるため実装しても動作しない）。
 //
 // 【履歴保持方針（100件）】
-// Dexie版は書き込み時に件数をカウントし、100件を超えたら古い履歴を
-// 削除している。Firestore版では書き込み時には一切削除せず、
+// 旧Dexie版は書き込み時に件数をカウントし、100件を超えたら古い履歴を
+// 削除していた。Firestore版では書き込み時には一切削除せず、
 // 読み取り時に query(orderBy("createdAt","desc"), limit(100)) で
 // 最新100件だけを取得する方式にした。
 //
@@ -96,10 +96,9 @@ export async function getHistories(): Promise<FirestoreHistoryEntry[]> {
 }
 
 /**
- * onSnapshotによるリアルタイム購読（最新100件）。
+ * onSnapshotによるリアルタイム購読（最新100件）。History画面で使用。
  * 読み取り専用フックのため、Firestoreが利用できない場合でも
  * 例外を投げずerrorを返すだけに留め、UIをクラッシュさせない。
- * Phase 3時点ではまだどのコンポーネントからも呼ばれていない。
  */
 export function useFirestoreHistories(): {
   histories: FirestoreHistoryEntry[] | undefined;

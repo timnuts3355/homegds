@@ -10,7 +10,7 @@ export type Unit =
   | "g" | "kg" | "ml" | "L" | "その他";
 
 export interface Product {
-  /** Firestore document IDを見据えた最終形としてstring。Dexie版の実主キー（number）との変換は lib/repositories/products.ts の境界で行う。 */
+  /** Firestore document ID（string）。 */
   id?: string;
   name: string;
   category: Category;
@@ -39,7 +39,7 @@ export type HistoryAction =
 
 export interface HistoryEntry {
   id?: number;
-  /** Firestore product document IDを見据えた最終形としてstring。 */
+  /** Firestore product document ID（string）。 */
   productId: string;
   productName: string;
   action: HistoryAction;

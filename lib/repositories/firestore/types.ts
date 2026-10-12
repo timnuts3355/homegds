@@ -1,17 +1,10 @@
 import type { Category, Unit, HistoryAction } from "@/types";
 
 // ============================================================
-// Firestore版データ型（Phase 3）。
+// Firestoreのデータ型。各画面はこの型をそのまま使用する。
 //
-// 既存の Product / HistoryEntry（types/index.ts）はDexieのnumber型
-// 自動採番IDを前提にしている。Firestoreのドキュメントidはstring型のため、
-// 既存型をそのまま流用せず、別の型として定義する。
-// これにより既存UI・Dexie版Repository（lib/repositories/products.ts,
-// history.ts）への影響をゼロに保つ。
-//
-// 実際にUIをFirestoreへ切り替える段階（Phase 4以降）になったら、
-// Product.id / HistoryEntry.id を number → string へ一度に変更し、
-// この型をそのままUI側の型として使う想定（変換シムは作らない）。
+// ドキュメントidはstring。createdAt / updatedAt は serverTimestamp() で
+// 付与されるため、サーバー反映前の一時的な状態ではnullになる。
 // ============================================================
 
 export interface FirestoreProduct {
