@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useProducts } from "@/lib/repositories/products";
+import { useFirestoreProducts } from "@/lib/repositories/firestore/products";
 import { CATEGORIES } from "@/lib/constants";
 import Header from "@/components/layout/Header";
 import BackButton from "@/components/layout/BackButton";
@@ -10,7 +10,9 @@ const COLORS = ["#f2524a", "#9b87e0", "#5baed4", "#45977a", "#d29b36"];
 
 export default function StatsClient() {
   const t = useTranslations();
-  const products = useProducts();
+  // Step 3: Stats画面のみFirestore読み取りへ切替（他画面は引き続きDexie）。
+  // Statsはcategoryと件数しか使わないため、FirestoreProductをそのまま扱える。
+  const { products, error } = useFirestoreProducts();
   const total = products?.length ?? 0;
   let angle = 0;
   const categories = CATEGORIES.map((category, index) => {
@@ -32,7 +34,9 @@ export default function StatsClient() {
           {t("stats.byCategory")}
         </h2>
         <p className="text-center text-xs mb-6" style={{ color: "var(--text-muted)" }}>{t("stats.note")}</p>
-        {products === undefined ? (
+        {error && products === undefined ? (
+          <p role="alert" className="text-center py-12 text-sm" style={{ color: "var(--text-muted)" }}>{t("stats.loadFailed")}</p>
+        ) : products === undefined ? (
           <p role="status" className="text-center py-12" style={{ color: "var(--text-muted)" }}>{t("common.loading")}</p>
         ) : total === 0 ? (
           <p className="text-center py-12 text-sm" style={{ color: "var(--text-muted)" }}>{t("stats.empty")}</p>
