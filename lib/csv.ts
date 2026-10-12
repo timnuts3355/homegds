@@ -21,10 +21,13 @@ function escapeCsvCell(value: string): string {
   return value;
 }
 
+/** CSV出力に必要なフィールドのみ（Dexie版Product・FirestoreProductの両方を受け付ける） */
+type CsvExportFields = Pick<Product, "name" | "category" | "quantity" | "minStock" | "unit" | "isFavorite">;
+
 /**
  * 商品配列をCSV文字列に変換する（UTF-8 BOM付き）
  */
-export function productsToCsv(products: Product[]): string {
+export function productsToCsv(products: readonly CsvExportFields[]): string {
   const rows = [CSV_HEADERS.join(",")];
 
   for (const p of products) {

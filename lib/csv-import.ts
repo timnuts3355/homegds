@@ -1,9 +1,10 @@
-import { getProducts, addProduct, updateProduct } from "@/lib/repositories/products";
-import { addHistory } from "@/lib/history";
+import { getProducts, addProduct, updateProduct } from "@/lib/repositories/firestore/products";
+import { addHistory } from "@/lib/repositories/firestore/history";
+import type { FirestoreProduct } from "@/lib/repositories/firestore/types";
 import type { ParsedCsvRow } from "./csv";
 
 // ============================================================
-// CSVインポート実行ロジック
+// CSVインポート実行ロジック（Firestoreへ書き込み）
 // ============================================================
 
 /** 1件ごとの重複解決方法 */
@@ -13,6 +14,8 @@ export interface ImportSummary {
   added: number;
   overwritten: number;
   skipped: number;
+  /** Firestoreへの書き込みに失敗した行数（その行だけ飛ばして続行する） */
+  failed: number;
 }
 
 /**
@@ -46,10 +49,11 @@ export async function importProducts(
   resolveDuplicate: DuplicateResolver,
   onProgress?: (current: number) => void
 ): Promise<ImportSummary> {
-  const summary: ImportSummary = { added: 0, overwritten: 0, skipped: 0 };
+  const summary: ImportSummary = { added: 0, overwritten: 0, skipped: 0, failed: 0 };
 
+  // 既存商品の取得に失敗した場合は重複判定ができないため、例外のまま呼び出し側へ返す
   const existing = await getProducts();
-  const existingByName = new Map(existing.map((p) => [p.name, p]));
+  const existingByName = new Map<string, FirestoreProduct>(existing.map((p) => [p.name, p]));
 
   // "以降すべて" が選ばれた後の自動適用先
   let bulkDecision: RowDecision | null = null;
@@ -59,7 +63,6 @@ export async function importProducts(
 
   for (const row of rows) {
     const match = existingByName.get(row.name);
-    const now = new Date();
 
     if (match) {
       let decision: RowDecision;
@@ -87,33 +90,53 @@ export async function importProducts(
         continue;
       }
 
-      // overwrite
-      await updateProduct(match.id!, {
-        category: row.category,
-        quantity: row.quantity,
-        minStock: row.minStock,
-        unit: row.unit,
-        isFavorite: row.isFavorite,
-      });
-      await addHistory({
-        productId: match.id!,
+      // overwrite（Firestoreのstring document IDをそのまま使用）
+      try {
+        await updateProduct(match.id, {
+          category: row.category,
+          quantity: row.quantity,
+          minStock: row.minStock,
+          unit: row.unit,
+          isFavorite: row.isFavorite,
+        });
+      } catch (err) {
+        console.error("[firestore] csv overwrite failed", row.name, err);
+        summary.failed++;
+        processedCount++;
+        onProgress?.(processedCount);
+        continue;
+      }
+      // ProductEditと同じく、数量が変わった場合のみ before → after を記録する
+      const quantityChanged = row.quantity !== match.quantity;
+      await recordHistory({
+        productId: match.id,
         productName: row.name,
         action: "edit",
-        quantityBefore: null,
-        quantityAfter: null,
+        quantityBefore: quantityChanged ? match.quantity : null,
+        quantityAfter: quantityChanged ? row.quantity : null,
         unit: row.unit,
       });
+      existingByName.set(row.name, { ...match, ...row });
       summary.overwritten++;
     } else {
-      const id = await addProduct({
-        name: row.name,
-        category: row.category,
-        quantity: row.quantity,
-        minStock: row.minStock,
-        unit: row.unit,
-        isFavorite: row.isFavorite,
-      });
-      await addHistory({
+      let id: string;
+      try {
+        id = await addProduct({
+          name: row.name,
+          category: row.category,
+          quantity: row.quantity,
+          minStock: row.minStock,
+          unit: row.unit,
+          isFavorite: row.isFavorite,
+        });
+      } catch (err) {
+        console.error("[firestore] csv add failed", row.name, err);
+        summary.failed++;
+        processedCount++;
+        onProgress?.(processedCount);
+        continue;
+      }
+      await recordHistory({
         productId: id,
         productName: row.name,
         action: "add",
@@ -121,7 +144,11 @@ export async function importProducts(
         quantityAfter: row.quantity,
         unit: row.unit,
       });
-      existingByName.set(row.name, { ...row, id, createdAt: now, updatedAt: now });
+      existingByName.set(row.name, {
+        id, name: row.name, category: row.category, quantity: row.quantity,
+        minStock: row.minStock, unit: row.unit, isFavorite: row.isFavorite,
+        createdAt: null, updatedAt: null,
+      });
       summary.added++;
     }
     processedCount++;
@@ -129,4 +156,14 @@ export async function importProducts(
   }
 
   return summary;
+}
+
+// 商品の書き込みは成功済みのため、履歴の記録失敗では行を失敗扱いにせず続行する
+// （再インポート時の二重登録を避ける。AddProductFormと同じ方針）。
+async function recordHistory(entry: Parameters<typeof addHistory>[0]): Promise<void> {
+  try {
+    await addHistory(entry);
+  } catch (err) {
+    console.error("[firestore] csv addHistory failed", entry.productName, err);
+  }
 }

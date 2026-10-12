@@ -127,6 +127,8 @@
     "overwritten": "覆寫",
     "skipped": "略過",
     "errorsSkipped": "錯誤（已略過）",
+    "failed": "儲存失敗",
+    "productsLoadFailed": "無法讀取商品資料。",
     "count": "{count} 筆",
     "progress": "{current} / {total} 筆",
     "errors": {

@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 
 import { useRef, useState } from "react";
 import { Upload, AlertCircle, CheckCircle2, X } from "lucide-react";
-import { getProducts } from "@/lib/repositories/products";
+import { getProducts } from "@/lib/repositories/firestore/products";
 import { parseProductsCsv, type ParsedCsvRow, type CsvParseError } from "@/lib/csv";
 import {
   importProducts,
@@ -71,7 +71,17 @@ export default function CsvImportModal({ onClose }: Props) {
     setParsedRows(result.rows);
     setParseErrors(result.errors);
 
-    const existing = await getProducts();
+    let existing;
+    try {
+      existing = await getProducts();
+    } catch (err) {
+      // Firestore読み取り失敗時は既存のエラーステップで通知する
+      console.error("[firestore] csv getProducts failed", err);
+      setParseErrors([{ line: 0, message: t("csv.productsLoadFailed") }]);
+      setProgress(null);
+      setStep("error");
+      return;
+    }
     const existingNames = new Set(existing.map((p) => p.name));
     const dupCount = countDuplicates(result.rows, existingNames);
     setDuplicateCount(dupCount);
@@ -107,11 +117,22 @@ export default function CsvImportModal({ onClose }: Props) {
     const total = parsedRows.length;
     setProgress({ phase: "importing", current: 0, total });
 
-    const result = await importProducts(
-      parsedRows,
-      resolveDuplicate,
-      (current) => setProgress({ phase: "importing", current, total })
-    );
+    let result: ImportSummary;
+    try {
+      result = await importProducts(
+        parsedRows,
+        resolveDuplicate,
+        (current) => setProgress({ phase: "importing", current, total })
+      );
+    } catch (err) {
+      // 既存商品の取得に失敗した場合（行単位の書き込み失敗はsummary.failedで集計）
+      console.error("[firestore] csv import failed", err);
+      setParseErrors([{ line: 0, message: t("csv.productsLoadFailed") }]);
+      setIsProcessing(false);
+      setProgress(null);
+      setStep("error");
+      return;
+    }
 
     setSummary(result);
     setIsProcessing(false);
@@ -360,8 +381,16 @@ export default function CsvImportModal({ onClose }: Props) {
                 <SummaryRow
                   label={t("csv.skipped")}
                   count={summary.skipped}
-                  isLast={parseErrors.length === 0}
+                  isLast={parseErrors.length === 0 && summary.failed === 0}
                 />
+                {summary.failed > 0 && (
+                  <SummaryRow
+                    label={t("csv.failed")}
+                    count={summary.failed}
+                    accent="#f2524a"
+                    isLast={parseErrors.length === 0}
+                  />
+                )}
                 {parseErrors.length > 0 && (
                   <SummaryRow
                     label={t("csv.errorsSkipped")}

@@ -127,6 +127,8 @@
     "overwritten": "上書き",
     "skipped": "スキップ",
     "errorsSkipped": "エラー（スキップ）",
+    "failed": "保存失敗",
+    "productsLoadFailed": "商品データを読み込めませんでした。",
     "count": "{count}件",
     "progress": "{current} / {total} 件",
     "errors": {

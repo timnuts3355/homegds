@@ -9,7 +9,7 @@ import { signOut } from "firebase/auth";
 import { firebaseAuth } from "@/lib/firebase/client";
 import { useAuth } from "@/lib/firebase/AuthProvider";
 import { useTheme } from "@/components/providers/ThemeProvider";
-import { useProducts } from "@/lib/repositories/products";
+import { useFirestoreProducts } from "@/lib/repositories/firestore/products";
 import { productsToCsv, generateExportFilename } from "@/lib/csv";
 import Header from "@/components/layout/Header";
 import BackButton from "@/components/layout/BackButton";
@@ -30,7 +30,9 @@ export default function SettingsClient() {
   const currentLocale = useLocale() as Locale;
   const [showImport, setShowImport] = useState(false);
 
-  const products = useProducts() ?? [];
+  // CSV書き出しはFirestoreの商品を対象にする
+  const { products: firestoreProducts } = useFirestoreProducts();
+  const products = firestoreProducts ?? [];
 
   const handleLocaleChange = (next: Locale) => {
     if (next === currentLocale) return;
