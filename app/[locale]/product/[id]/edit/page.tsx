@@ -1,4 +1,4 @@
-import { getTranslations, setRequestLocale } from "next-intl/server";
+import { setRequestLocale } from "next-intl/server";
 import ProductEditClient from "@/components/product/ProductEditClient";
 
 interface Props {
@@ -8,8 +8,7 @@ interface Props {
 export default async function ProductEditPage({ params }: Props) {
   const { locale, id } = await params;
   setRequestLocale(locale);
-  const t = await getTranslations({ locale, namespace: "product" });
-  const numId = Number(id);
-  if (isNaN(numId)) return <p className="p-4 text-muted">{t("invalidId")}</p>;
-  return <ProductEditClient id={numId} />;
+  // idの妥当性チェックはRepository境界（lib/repositories/products.ts）と
+  // ProductEditClientの「商品が見つかりません」表示に委ねる。
+  return <ProductEditClient id={id} />;
 }

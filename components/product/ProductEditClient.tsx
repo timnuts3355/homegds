@@ -15,7 +15,7 @@ import { CATEGORIES, UNITS } from "@/lib/constants";
 import Header from "@/components/layout/Header";
 import BackButton from "@/components/layout/BackButton";
 
-interface Props { id: number; }
+interface Props { id: string; }
 
 export default function ProductEditClient({ id }: Props) {
   const t = useTranslations();
