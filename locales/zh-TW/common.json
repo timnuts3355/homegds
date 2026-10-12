@@ -97,7 +97,9 @@
     "empty": "尚無紀錄",
     "latest": "最近 {count} 筆",
     "today": "今天",
-    "yesterday": "昨天"
+    "yesterday": "昨天",
+    "justNow": "剛剛",
+    "loadFailed": "無法讀取紀錄。"
   },
   "csv": {
     "selectHint": "請選擇 CSV 檔案。",

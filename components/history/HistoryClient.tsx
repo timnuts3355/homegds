@@ -3,21 +3,30 @@
 import { useTranslations } from "next-intl";
 import { unitLabel } from "@/lib/unit-label";
 
-import { useHistories } from "@/lib/repositories/history";
+import { useFirestoreHistories } from "@/lib/repositories/firestore/history";
+import type { FirestoreHistoryEntry } from "@/lib/repositories/firestore/types";
 import { ACTION_COLORS } from "@/lib/history";
-import type { HistoryEntry, HistoryAction } from "@/types";
+import type { HistoryAction } from "@/types";
 import Header from "@/components/layout/Header";
 import BackButton from "@/components/layout/BackButton";
 
 export default function HistoryClient() {
   const t = useTranslations();
-  const histories = useHistories() ?? [];
+  // History画面はFirestoreへ切替済み（最新100件・createdAt降順はRepository側のクエリで取得）。
+  const { histories: firestoreHistories, error } = useFirestoreHistories();
+  const histories = firestoreHistories ?? [];
 
   return (
     <>
       <Header title={t("nav.history")} left={<BackButton />} />
       <main className="max-w-2xl mx-auto pb-24" style={{ backgroundColor: "var(--bg)" }}>
-        {histories.length === 0 ? (
+        {error && firestoreHistories === undefined ? (
+          <div className="list-group">
+            <div className="flex justify-center items-center py-14">
+              <p role="alert" className="text-sm" style={{ color: "var(--text-muted)" }}>{t("history.loadFailed")}</p>
+            </div>
+          </div>
+        ) : histories.length === 0 ? (
           <EmptyState />
         ) : (
           <>
@@ -40,7 +49,7 @@ export default function HistoryClient() {
   );
 }
 
-function HistoryRow({ entry, isLast }: { entry: HistoryEntry; isLast: boolean }) {
+function HistoryRow({ entry, isLast }: { entry: FirestoreHistoryEntry; isLast: boolean }) {
   const t = useTranslations();
   const action  = entry.action as HistoryAction;
   const colors  = ACTION_COLORS[action];
@@ -71,11 +80,22 @@ function HistoryRow({ entry, isLast }: { entry: HistoryEntry; isLast: boolean })
           {entry.quantityBefore !== null && entry.quantityAfter === null && (
             <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>{entry.quantityBefore}{unitLabel(entry.unit, t)}</span>
           )}
+          {/* 操作したメンバー（補助情報） */}
+          {entry.actorDisplayName && (
+            <span className="text-[11px] truncate" style={{ color: "var(--text-muted)" }}>· {entry.actorDisplayName}</span>
+          )}
         </div>
       </div>
       <div className="flex-shrink-0 text-right">
-        <p className="text-[11px] leading-snug" style={{ color: "var(--text-muted)" }}>{formatDate(entry.createdAt, t)}</p>
-        <p className="text-[11px] leading-snug" style={{ color: "var(--text-muted)" }}>{formatTime(entry.createdAt)}</p>
+        {/* serverTimestamp()反映前はcreatedAtが一時的にnullのため「たった今」と表示 */}
+        {entry.createdAt ? (
+          <>
+            <p className="text-[11px] leading-snug" style={{ color: "var(--text-muted)" }}>{formatDate(entry.createdAt, t)}</p>
+            <p className="text-[11px] leading-snug" style={{ color: "var(--text-muted)" }}>{formatTime(entry.createdAt)}</p>
+          </>
+        ) : (
+          <p className="text-[11px] leading-snug" style={{ color: "var(--text-muted)" }}>{t("history.justNow")}</p>
+        )}
       </div>
     </div>
   );
