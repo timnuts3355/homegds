@@ -17,7 +17,10 @@ const STATUS_ORDER: Record<StockStatus, number> = { out: 0, low: 1, ok: 2 };
  * 在庫一覧のデフォルトソート
  * お気に入り → 在庫不足 → 在庫少ない → その他
  */
-export function sortInventory(products: Product[]): Product[] {
+/** 並び替えに必要なフィールドのみ（Dexie版Product・FirestoreProductの両方を受け付ける） */
+type SortFields = StockFields & Pick<Product, "isFavorite" | "name">;
+
+export function sortInventory<T extends SortFields>(products: T[]): T[] {
   return [...products].sort((a, b) => {
     // お気に入りを最優先
     if (a.isFavorite !== b.isFavorite) return a.isFavorite ? -1 : 1;

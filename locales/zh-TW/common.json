@@ -89,7 +89,8 @@
     "clearFilter": "清除",
     "noResults": "找不到符合條件的商品",
     "empty": "尚未新增商品",
-    "minimum": "最低 {quantity}{unit}"
+    "minimum": "最低 {quantity}{unit}",
+    "loadFailed": "無法讀取商品資料。"
   },
   "history": {
     "empty": "尚無紀錄",

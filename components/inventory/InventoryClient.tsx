@@ -6,10 +6,11 @@ import { unitLabel } from "@/lib/unit-label";
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { Search, X, Star, Pencil, Trash2 } from "lucide-react";
-import { useProducts, updateProduct, deleteProduct } from "@/lib/repositories/products";
-import { addHistory } from "@/lib/history";
+import { useFirestoreProducts, updateProduct, deleteProduct } from "@/lib/repositories/firestore/products";
+import { addHistory } from "@/lib/repositories/firestore/history";
+import type { FirestoreProduct } from "@/lib/repositories/firestore/types";
 import { getStockStatus, sortInventory, nextQuantity, prevQuantity } from "@/lib/stock";
-import type { Product, StockStatus } from "@/types";
+import type { StockStatus } from "@/types";
 import Header from "@/components/layout/Header";
 import BackButton from "@/components/layout/BackButton";
 
@@ -27,7 +28,9 @@ export default function InventoryClient({ filter = null }: InventoryClientProps)
   const router     = useRouter();
   const pathname   = usePathname();
   const [query, setQuery] = useState("");
-  const allProducts = useProducts() ?? [];
+  // InventoryはFirestoreへ切替済み（スワイプ・長押しロジックは従来のまま、読み書き先のみ変更）。
+  const { products: firestoreProducts, error } = useFirestoreProducts();
+  const allProducts = firestoreProducts ?? [];
 
   // 1. 在庫状態フィルタを先に適用
   const statusFiltered = filter
@@ -52,7 +55,13 @@ export default function InventoryClient({ filter = null }: InventoryClientProps)
           />
         )}
         <SearchBar value={query} onChange={setQuery} />
-        {filtered.length === 0 ? (
+        {error && firestoreProducts === undefined ? (
+          <div className="list-group">
+            <div className="flex justify-center items-center py-14">
+              <p role="alert" className="text-sm" style={{ color: "var(--text-muted)" }}>{t("inventory.loadFailed")}</p>
+            </div>
+          </div>
+        ) : filtered.length === 0 ? (
           <EmptyState hasQuery={query.trim().length > 0 || filter !== null} />
         ) : (
           <div className="list-group">
@@ -117,7 +126,7 @@ function SearchBar({ value, onChange }: { value: string; onChange: (v: string) =
 }
 
 // ── 商品行 ──
-function InventoryRow({ product, isLast }: { product: Product; isLast: boolean }) {
+function InventoryRow({ product, isLast }: { product: FirestoreProduct; isLast: boolean }) {
   const t = useTranslations();
   const router = useRouter();
   const locale = useLocale();
@@ -135,19 +144,20 @@ function InventoryRow({ product, isLast }: { product: Product; isLast: boolean }
 
   const updateQty = useCallback(async (next: number, action: "use" | "restock") => {
     const before = product.quantity;
-    await updateProduct(product.id!, { quantity: next });
-    await addHistory({ productId: product.id!, productName: product.name,
+    await updateProduct(product.id, { quantity: next });
+    await addHistory({ productId: product.id, productName: product.name,
       action, quantityBefore: before, quantityAfter: next, unit: product.unit });
   }, [product]);
 
   const removeProduct = useCallback(async () => {
-    await addHistory({ productId: product.id!, productName: product.name, action: "delete",
+    // delete履歴を先に記録してから商品を削除する（ProductEditと同じ順序）。
+    await addHistory({ productId: product.id, productName: product.name, action: "delete",
       quantityBefore: product.quantity, quantityAfter: null, unit: product.unit });
-    await deleteProduct(product.id!);
+    await deleteProduct(product.id);
   }, [product]);
 
   const toggleFavorite = useCallback(async () => {
-    await updateProduct(product.id!, { isFavorite: !product.isFavorite });
+    await updateProduct(product.id, { isFavorite: !product.isFavorite });
   }, [product]);
 
   const onPointerCancel = () => {

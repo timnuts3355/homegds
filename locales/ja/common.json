@@ -89,7 +89,8 @@
     "clearFilter": "解除",
     "noResults": "該当する商品が見つかりません",
     "empty": "商品が登録されていません",
-    "minimum": "最低{quantity}{unit}"
+    "minimum": "最低{quantity}{unit}",
+    "loadFailed": "商品データを読み込めませんでした。"
   },
   "history": {
     "empty": "履歴がありません",
